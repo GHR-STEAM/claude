@@ -11,7 +11,7 @@ Let's set our teachers up for success by enrolling Copilot (in our school) to ha
 <details>
 <summary>📸 Website screenshot</summary><br/>
 
-<img width="600" alt="screenshot of Mergington High School WebApp" src="../images/mergington-webapp-screenshot.png" />
+<img width="600" alt="screenshot of Mergington High School WebApp" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/mergington-webapp-screenshot.png?raw=true" />
 
 </details>
 
@@ -127,15 +127,15 @@ In other exercises, we have been developing the Extracurricular Activities websi
 
 1. Validate the **GitHub Copilot** and **Python** extensions are installed and enabled.
 
-   <img width="300" alt="copilot extension for VS Code" src="../images/copilot-vscode-extension.png" /><br/>
-   <img width="300" alt="python extension for VS Code" src="../images/python-vscode-extension.png" />
+   <img width="300" alt="copilot extension for VS Code" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/copilot-vscode-extension.png?raw=true" /><br/>
+   <img width="300" alt="python extension for VS Code" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/python-vscode-extension.png?raw=true" />
 
 1. Try running the application. In the left sidebar, select the **Run and Debug** tab and then press the **Start Debugging** icon.
 
    <details>
    <summary>📸 Show screenshot</summary><br/>
 
-   <img width="300" alt="run and debug" src="../images/run-and-debug.png" />
+   <img width="300" alt="run and debug" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/run-and-debug.png?raw=true" />
 
    </details>
 
@@ -144,7 +144,7 @@ In other exercises, we have been developing the Extracurricular Activities websi
 
    If the **Run and Debug** area is empty, try reloading VS Code: Open the command palette (`Ctrl`+`Shift`+`P`) and search for `Developer: Reload Window`.
 
-   <img width="300" alt="empty run and debug panel" src="../images/empty-run-and-debug-panel.png" />
+   <img width="300" alt="empty run and debug panel" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/empty-run-and-debug-panel.png?raw=true" />
 
    </details>
 
@@ -153,7 +153,7 @@ In other exercises, we have been developing the Extracurricular Activities websi
    <details>
    <summary>📸 Show screenshot</summary><br/>
 
-   <img width="350" alt="ports tab" src="../images/ports-tab.png" />
+   <img width="350" alt="ports tab" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/ports-tab.png?raw=true" />
 
    </details>
 
@@ -165,18 +165,18 @@ Before we can start giving requests from teachers to Copilot, we need to grant a
 
 1. In the top right, click your **user icon** and select **Settings**.
 
-   <img width="200" src="../images/user-icon-menu.png"><br/>
-   <img width="200" src="../images/settings-copilot-menu.png">
+   <img width="200" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/user-icon-menu.png?raw=true"><br/>
+   <img width="200" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/settings-copilot-menu.png?raw=true">
 
 1. In the left navigation, expand the **Copilot** section and select **Cloud agent**.
 
-   <img width="200" src="../images/copilot-cloud-agent-settings.png">
+   <img width="200" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/copilot-cloud-agent-settings.png?raw=true">
 
 1. Check that the **Repository access** field is set to `All repositories`.
 
    Alternatively, if you prefer to enable it for only this exercise, select `Only selected repositories` and select this exercise repository (`{{ full_repo_name }}`).
 
-   <img width="300" src="../images/copilot-repository-access.png">
+   <img width="300" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/copilot-repository-access.png?raw=true">
 
 ## ⌨️ Activity: Assign Copilot an issue
 
@@ -208,18 +208,18 @@ The teachers have already created several important issues, but let's do a test 
 
 1. In the top right, click on the **Assignees** area and select **Copilot**.
 
-   <img width="350" src="../images/issue-assignees-copilot.png" />
+   <img width="350" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/issue-assignees-copilot.png?raw=true" />
 
 1. A dialog **might** appear describing that Copilot will begin work. Click the **Assign** button, ignoring the option to provide additional details.
 
-   <img width="350" src="../images/assign-copilot-window.png" />
+   <img width="350" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/assign-copilot-window.png?raw=true" />
 
 1. After you assign the issue to Copilot, in a moment, you will notice:
    - The issue will have an `👀` reaction to show Copilot is reading the issue.
    - The activity log shows you assigned the issue to Copilot.
    - The issue log includes a linked pull request.
 
-   <img width="400" src="../images/issue-copilot-assigned.png" />
+   <img width="400" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/issue-copilot-assigned.png?raw=true" />
 
 1. With the issue assigned, Mona should be busy checking your work. Give her a moment to share the next steps.
 

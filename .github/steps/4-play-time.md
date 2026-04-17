@@ -84,7 +84,7 @@ Let's get you familiarized with the Agents panel! This is always available so it
 
 1. In a new tab, open the **Copilot Agents** panel from the top navigation bar
 
-   <img width="400" alt="Agents panel view" src="../images/agents-panel-view.png" />
+   <img width="400" alt="Agents panel view" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/agents-panel-view.png?raw=true" />
 
 1. Make sure the `{{ full_repo_name }}` repository is selected in the panel and the branch is set to `main`.
 
@@ -101,19 +101,19 @@ Let's get you familiarized with the Agents panel! This is always available so it
 
 1. After a moment, you will notice that the task appears in the panel with its current status. You can check back here for a high level overview of all your assigned tasks.
 
-   <img width="350" alt="Agents Panel task in progress view" src="../images/agents-panel-task-progress.png" />
+   <img width="350" alt="Agents Panel task in progress view" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/agents-panel-task-progress.png?raw=true" />
 
 1. Click on the task to jump straight to the related repository's **Agents** tab and session logs, to track how Copilot is working on it in real time.
 
 1. You will notice Copilot begins by running the customization steps you've set up in the previous step!
 
-   <img width="500" alt="Repository agents tab" src="../images/repository-agents-tab.png" />
+   <img width="500" alt="Repository agents tab" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/repository-agents-tab.png?raw=true" />
 
-   <img width="500" alt="Copilot session logs with copilot setup steps" src="../images/copilot-session-setup-steps.png" />
+   <img width="500" alt="Copilot session logs with copilot setup steps" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/copilot-session-setup-steps.png?raw=true" />
 
 1. Let's leave Copilot to work its magic for now, you can come back to review the results later and optionally create a pull request. ✨
 
-   <img width="600" alt="copilot-session-finished" src="../images/copilot-session-finished.png" />
+   <img width="600" alt="copilot-session-finished" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/copilot-session-finished.png?raw=true" />
 
 > [!TIP]
 > You can also access the Agents Panel in full screen mode at https://github.com/copilot/agents
@@ -132,7 +132,7 @@ You still have some issues opened on the repository, let's see how Copilot can h
 
 1. Open the **Copilot Agents** panel again and notice that the issues you assign also appear here!
 
-   <img width="300"  alt="Copilot Agents Panel with three tasks running in parallel" src="../images/agents-panel-parallel-tasks.png" />
+   <img width="300"  alt="Copilot Agents Panel with three tasks running in parallel" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/agents-panel-parallel-tasks.png?raw=true" />
 
 1. For both tasks, monitor the progress in separate browser tabs. Remember, since these were created from issues, you can also track them from the **Pull Requests** tab.
 

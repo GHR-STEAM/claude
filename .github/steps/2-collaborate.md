@@ -26,7 +26,7 @@ You can access the session logs in two ways:
 <details>
 <summary>📸 Copilot Session Logs </summary><br/>
 
-<img width="800" alt="screenshot of copilot cloud agent session logs" src="../images/copilot-session-logs.png" />
+<img width="800" alt="screenshot of copilot cloud agent session logs" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/copilot-session-logs.png?raw=true" />
 
 </details>
 
@@ -62,26 +62,26 @@ flowchart LR
 
    <details>
       <summary>1. When starting, Copilot provides an initial copy of the issue. <b>[show image]</b></summary>
-      <img width="500" alt="image" src="../images/pr-initial-description.png" />
+      <img width="500" alt="image" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/pr-initial-description.png?raw=true" />
    </details>
 
    <details>
       <summary>2. After planning, Copilot provides a set of action items. <b>[show image]</b></summary>
-      <img width="500" alt="image" src="../images/pr-planning-description.png" />
+      <img width="500" alt="image" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/pr-planning-description.png?raw=true" />
    </details>
 
    <details>
       <summary>3. After finishing, Copilot provides a summary. <b>[show image]</b></summary>
-      <img width="500" alt="image" src="../images/pr-final-description.png" />
+      <img width="500" alt="image" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/pr-final-description.png?raw=true" />
    </details>
 
 1. Scroll down slightly to view the timeline and high-level notes provided by Copilot. Click the **View session** button.
 
-   <img width="500" src="../images/pr-view-session-button.png" />
+   <img width="500" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/pr-view-session-button.png?raw=true" />
 
 1. The new page shows a journal of Copilot's work. On the left side, you can see a list of sessions.
 
-   <img width="800" alt="screenshot of copilot cloud agent session logs" src="../images/copilot-session-logs.png" />
+   <img width="800" alt="screenshot of copilot cloud agent session logs" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/copilot-session-logs.png?raw=true" />
 
 1. If the Copilot session is still ongoing, monitor the session journal.
 
@@ -94,7 +94,7 @@ flowchart LR
 >
 > <details>
 > <summary>Show image</summary>
-> <img width="500" alt="image" src="../images/pr-description-history.png" />
+> <img width="500" alt="image" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/pr-description-history.png?raw=true" />
 > </details>
 
 ### ⌨️ Activity: Provide Copilot feedback
@@ -103,11 +103,11 @@ Now that Copilot has finished its working session, let's review its work and pro
 
 1. In the pull request, click the **Add your review** button.
 
-   <img width="350" src="../images/pr-add-review-button.png" />
+   <img width="350" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/pr-add-review-button.png?raw=true" />
 
 1. Find the new entry created by Copilot. Hover over a line to show the plus sign. **Click** to open the add comment dialog box.
 
-   <img width="350" src="../images/pr-add-comment.png" />
+   <img width="350" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/pr-add-comment.png?raw=true" />
 
 1. Reading the description, we think it should be more interesting to match the Manga spirit. Let's ask Copilot to fix that. Enter the following text and click **Start a review**.
 
@@ -118,15 +118,15 @@ Now that Copilot has finished its working session, let's review its work and pro
 
 1. Above the changes list, click the **Submit review** button to open the review panel. At the bottom of the panel, select **Submit Review**.
 
-   <img width="300" alt="submit-pr-review" src="../images/submit-pr-review.png" />
+   <img width="300" alt="submit-pr-review" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/submit-pr-review.png?raw=true" />
 
 1. After a moment, Copilot will start working on your requested changes in a new agent session. Click the new **View session** button that will appear in the pull request timeline.
 
-   <img width="600" alt="copilot-working-on-review" src="../images/copilot-working-on-review.png" />
+   <img width="600" alt="copilot-working-on-review" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/copilot-working-on-review.png?raw=true" />
 
 1. As you can see, Copilot started working on the requested changes in a new session. However, the entire session journal is kept here so you can revisit logs from the previous sessions!
 
-   <img width="600"  alt="Copilot session journal with multiple sessions" src="../images/copilot-session-journal-multiple.png" />
+   <img width="600"  alt="Copilot session journal with multiple sessions" src="https://github.com/GHR-STEAM/claude/blob/main/.github/images/copilot-session-journal-multiple.png?raw=true" />
 
 1. You can also steer Copilot mid session if you have any extra details you forgot to add initially, or you notice Copilot is heading in the wrong direction.
 
