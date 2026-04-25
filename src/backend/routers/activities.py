@@ -5,6 +5,7 @@ Endpoints for the High School Management System API
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from typing import Dict, Any, Optional, List
+import re
 
 from ..database import activities_collection, teachers_collection
 
@@ -12,6 +13,12 @@ router = APIRouter(
     prefix="/activities",
     tags=["activities"]
 )
+
+EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
+def validate_email(email: str) -> bool:
+    """Validate email format"""
+    return EMAIL_PATTERN.match(email) is not None
 
 @router.get("", response_model=Dict[str, Any])
 @router.get("/", response_model=Dict[str, Any])
@@ -66,10 +73,14 @@ def get_available_days() -> List[str]:
 @router.post("/{activity_name}/signup")
 def signup_for_activity(activity_name: str, email: str, teacher_username: Optional[str] = Query(None)):
     """Sign up a student for an activity - requires teacher authentication"""
+    # Validate email format
+    if not validate_email(email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
     # Check teacher authentication
     if not teacher_username:
         raise HTTPException(status_code=401, detail="Authentication required for this action")
-    
+
     teacher = teachers_collection.find_one({"_id": teacher_username})
     if not teacher:
         raise HTTPException(status_code=401, detail="Invalid teacher credentials")
@@ -98,10 +109,14 @@ def signup_for_activity(activity_name: str, email: str, teacher_username: Option
 @router.post("/{activity_name}/unregister")
 def unregister_from_activity(activity_name: str, email: str, teacher_username: Optional[str] = Query(None)):
     """Remove a student from an activity - requires teacher authentication"""
+    # Validate email format
+    if not validate_email(email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
     # Check teacher authentication
     if not teacher_username:
         raise HTTPException(status_code=401, detail="Authentication required for this action")
-    
+
     teacher = teachers_collection.find_one({"_id": teacher_username})
     if not teacher:
         raise HTTPException(status_code=401, detail="Invalid teacher credentials")
