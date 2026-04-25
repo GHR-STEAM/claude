@@ -12,10 +12,11 @@ Consider the following when communicating with the staff.
 ## Program Architecture
 
 - The website users are the students and teachers. Make sure the user experience is simple.
+- The application uses Python 3.13 and MongoDB 7 for the backend.
 - Do not make additional apps or services.
 - Do not make command line tools.
 - Do not create a long single file application. Always use an easy-to-understand directory structure.
-- Only use HTML, CSS, Javascript, and Python. No other languages.
+- The primary programming languages are HTML, CSS, Javascript, and Python.
 
 ## About Mergington High School
 
