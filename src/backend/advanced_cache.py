@@ -38,6 +38,8 @@ class AdvancedCacheManager:
         self.max_size = max_size
         self.cache: OrderedDict = OrderedDict()
         self.access_patterns: Dict[str, List[float]] = {}
+        self.hit_count: int = 0
+        self.miss_count: int = 0
         self.pool = get_db_pool()
         self.db = self.pool.get_database()
 
@@ -57,7 +59,7 @@ class AdvancedCacheManager:
             ttl: Time to live in seconds
             priority: Priority level (1-10, higher = more important)
         """
-        if len(self.cache) >= self.max_size:
+        if len(self.cache) >= self.max_size and key not in self.cache:
             self._evict_lowest_priority()
 
         self.cache[key] = {
@@ -85,6 +87,7 @@ class AdvancedCacheManager:
             Cached value or None
         """
         if key not in self.cache:
+            self.miss_count += 1
             return None
 
         entry = self.cache[key]
@@ -94,12 +97,15 @@ class AdvancedCacheManager:
         # Check if expired
         if elapsed > entry["ttl"]:
             del self.cache[key]
+            self.access_patterns.pop(key, None)
+            self.miss_count += 1
             logger.debug(f"Cache expired: {key}")
             return None
 
         # Update access metrics
         entry["last_accessed"] = current_time
         entry["access_count"] += 1
+        self.hit_count += 1
 
         # Track access pattern
         if key not in self.access_patterns:
@@ -179,9 +185,9 @@ class AdvancedCacheManager:
             len(self.cache) if self.cache else 0
         )
 
-        # Calculate hit rate (simplified)
-        total_possible = sum(len(pattern) for pattern in self.access_patterns.values())
-        hit_rate = (total_accesses / total_possible * 100) if total_possible > 0 else 0
+        # Calculate hit rate accurately
+        total_requests = self.hit_count + self.miss_count
+        hit_rate = (self.hit_count / total_requests * 100) if total_requests > 0 else 0
 
         return {
             "cache_size": len(self.cache),

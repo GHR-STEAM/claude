@@ -59,7 +59,7 @@ class AnalyticsEngine:
 
         # Calculate statistics
         total_participants = sum(
-            len(activity.get("participants", [])) for activity in activities
+            len(activity.get("participants") or []) for activity in activities
         )
         avg_participants = (
             total_participants / total_activities if total_activities > 0 else 0
