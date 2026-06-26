@@ -43,6 +43,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Authentication state
   let currentUser = null;
+  let authToken = null;
+
+  // API base path (versioned)
+  const API_BASE = "/api/v1";
+
+  // Helper: get auth headers
+  function getAuthHeaders() {
+    const headers = { "Content-Type": "application/json" };
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+    return headers;
+  }
+
+  // Helper: API fetch wrapper
+  async function apiFetch(url, options = {}) {
+    const headers = options.headers || {};
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+    if (options.body && !headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+    const response = await fetch(url, { ...options, headers });
+    return response;
+  }
+
+  // Pagination state
+  let currentPage = 1;
+  let pageSize = 0;
+  let totalItems = 0;
+  let totalPages = 1;
 
   // Time range mappings for the dropdown
   const timeRanges = {
@@ -100,37 +132,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Check if user is already logged in (from localStorage)
   function checkAuthentication() {
+    const savedToken = localStorage.getItem("authToken");
     const savedUser = localStorage.getItem("currentUser");
-    if (savedUser) {
+    if (savedToken && savedUser) {
       try {
+        authToken = savedToken;
         currentUser = JSON.parse(savedUser);
         updateAuthUI();
-        // Verify the stored user with the server
-        validateUserSession(currentUser.username);
+        validateUserSession();
       } catch (error) {
         console.error("Error parsing saved user", error);
-        logout(); // Clear invalid data
+        logout();
       }
     }
 
-    // Set authentication class on body
     updateAuthBodyClass();
   }
 
-  // Validate user session with the server
-  async function validateUserSession(username) {
+  // Validate user session with the server using JWT
+  async function validateUserSession() {
     try {
-      const response = await fetch(
-        `/auth/check-session?username=${encodeURIComponent(username)}`
-      );
+      const response = await apiFetch(`${API_BASE}/auth/check-session`);
 
       if (!response.ok) {
-        // Session invalid, log out
         logout();
         return;
       }
 
-      // Session is valid, update user data
       const userData = await response.json();
       currentUser = userData;
       localStorage.setItem("currentUser", JSON.stringify(userData));
@@ -169,14 +197,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Login function
   async function login(username, password) {
     try {
-      const response = await fetch(
-        `/auth/login?username=${encodeURIComponent(
-          username
-        )}&password=${encodeURIComponent(password)}`,
-        {
-          method: "POST",
-        }
-      );
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
       const data = await response.json();
 
@@ -188,9 +213,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return false;
       }
 
-      // Login successful
-      currentUser = data;
-      localStorage.setItem("currentUser", JSON.stringify(data));
+      authToken = data.access_token;
+      currentUser = {
+        username: data.username,
+        display_name: data.display_name,
+        role: data.role,
+      };
+      localStorage.setItem("authToken", authToken);
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
       updateAuthUI();
       closeLoginModalHandler();
       showMessage(`Welcome, ${currentUser.display_name}!`, "success");
@@ -205,6 +235,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Logout function
   function logout() {
     currentUser = null;
+    authToken = null;
+    localStorage.removeItem("authToken");
     localStorage.removeItem("currentUser");
     updateAuthUI();
     showMessage("You have been logged out.", "info");
@@ -392,16 +424,36 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // Handle pagination
+      if (pageSize > 0) {
+        const skip = (currentPage - 1) * pageSize;
+        queryParams.push(`skip=${skip}`);
+        queryParams.push(`limit=${pageSize}`);
+      }
+
       const queryString =
         queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
-      const response = await fetch(`/activities${queryString}`);
-      const activities = await response.json();
+      const response = await apiFetch(`${API_BASE}/activities${queryString}`);
+      const data = await response.json();
 
       // Save the activities data
-      allActivities = activities;
+      // Handle both paginated {data, metadata} and plain dict responses
+      if (data.data && data.metadata) {
+        allActivities = {};
+        data.data.forEach((item) => {
+          const name = item._id || item.name || Object.keys(item)[0];
+          if (name) allActivities[name] = item;
+        });
+        totalPages = data.metadata.total_pages || 1;
+        currentPage = data.metadata.current_page || 1;
+        totalItems = data.metadata.total_items || 0;
+      } else {
+        allActivities = data;
+      }
 
       // Apply search and filter, and handle weekend filter in client
       displayFilteredActivities();
+      updatePaginationUI();
     } catch (error) {
       activitiesList.innerHTML =
         "<p>Failed to load activities. Please try again later.</p>";
@@ -769,18 +821,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Show confirmation dialog
     showConfirmationDialog(
       `Are you sure you want to unregister ${email} from ${activity}?`,
-      async () => {
-        try {
-          const response = await fetch(
-            `/activities/${encodeURIComponent(
-              activity
-            )}/unregister?email=${encodeURIComponent(
-              email
-            )}&teacher_username=${encodeURIComponent(currentUser.username)}`,
-            {
-              method: "POST",
-            }
-          );
+        async () => {
+          try {
+            const response = await apiFetch(
+              `${API_BASE}/activities/${encodeURIComponent(activity)}/unregister`,
+              {
+                method: "POST",
+                body: JSON.stringify({ email: email }),
+              }
+            );
 
           const result = await response.json();
 
@@ -828,14 +877,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const activity = activityInput.value;
 
     try {
-      const response = await fetch(
-        `/activities/${encodeURIComponent(
-          activity
-        )}/signup?email=${encodeURIComponent(
-          email
-        )}&teacher_username=${encodeURIComponent(currentUser.username)}`,
+      const response = await apiFetch(
+        `${API_BASE}/activities/${encodeURIComponent(activity)}/signup`,
         {
           method: "POST",
+          body: JSON.stringify({ email: email }),
         }
       );
 
@@ -860,6 +906,46 @@ document.addEventListener("DOMContentLoaded", () => {
     setDayFilter,
     setTimeRangeFilter,
   };
+
+  // Pagination controls
+  const paginationControls = document.getElementById("pagination-controls");
+  const prevPageBtn = document.getElementById("prev-page");
+  const nextPageBtn = document.getElementById("next-page");
+  const pageInfo = document.getElementById("page-info");
+  const pageSizeSelect = document.getElementById("page-size-select");
+
+  function updatePaginationUI() {
+    if (pageSize > 0 && totalItems > 0) {
+      paginationControls.style.display = "flex";
+      pageInfo.textContent = `Page ${currentPage} of ${totalPages} (${totalItems} activities)`;
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
+      prevPageBtn.style.opacity = prevPageBtn.disabled ? "0.4" : "1";
+      nextPageBtn.style.opacity = nextPageBtn.disabled ? "0.4" : "1";
+    } else {
+      paginationControls.style.display = "none";
+    }
+  }
+
+  prevPageBtn.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      fetchActivities();
+    }
+  });
+
+  nextPageBtn.addEventListener("click", () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      fetchActivities();
+    }
+  });
+
+  pageSizeSelect.addEventListener("change", () => {
+    pageSize = parseInt(pageSizeSelect.value);
+    currentPage = 1;
+    fetchActivities();
+  });
 
   // Initialize app
   checkAuthentication();

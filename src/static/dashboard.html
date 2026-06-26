@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mergington API - Monitoring Dashboard</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+header { background: #1e293b; padding: 20px 30px; border-bottom: 2px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+header h1 { font-size: 24px; color: #38bdf8; }
+header h1 span { color: #94a3b8; font-weight: 400; font-size: 16px; }
+#refresh-indicator { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; display: inline-block; margin-left: 10px; }
+#refresh-indicator.error { background: #ef4444; }
+#refresh-indicator.loading { background: #f59e0b; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.container { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; gap: 20px; }
+.grid-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+.card h2 { font-size: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+.stat-value { font-size: 36px; font-weight: 700; color: #f1f5f9; }
+.stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.health-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+.health-healthy { background: #064e3b; color: #34d399; }
+.health-degraded { background: #78350f; color: #fbbf24; }
+.health-unhealthy { background: #7f1d1d; color: #f87171; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+table th { text-align: left; color: #64748b; padding: 8px 12px; border-bottom: 1px solid #334155; font-weight: 600; font-size: 12px; text-transform: uppercase; }
+table td { padding: 8px 12px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+.bar-container { background: #334155; border-radius: 4px; height: 8px; overflow: hidden; margin-top: 4px; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.bar-green { background: #22c55e; }
+.bar-yellow { background: #f59e0b; }
+.bar-red { background: #ef4444; }
+.latency-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+.latency-box { text-align: center; padding: 12px; background: #0f172a; border-radius: 8px; }
+.latency-box .val { font-size: 24px; font-weight: 700; color: #38bdf8; }
+.latency-box .lbl { font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 2px; }
+.endpoint-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #334155; font-size: 13px; }
+.endpoint-row:last-child { border-bottom: none; }
+.endpoint-name { color: #cbd5e1; }
+.endpoint-count { color: #38bdf8; font-weight: 600; }
+.btn { padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+.btn-danger { background: #dc2626; color: white; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-warning { background: #d97706; color: white; }
+.btn-warning:hover { background: #b45309; }
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+#toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 24px; border-radius: 8px; background: #1e293b; border: 1px solid #334155; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 100; }
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.success { border-color: #22c55e; }
+#toast.error { border-color: #ef4444; }
+.status-code-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 12px; }
+.status-code-box { text-align: center; padding: 8px; background: #0f172a; border-radius: 6px; }
+.status-code-box .code { font-size: 18px; font-weight: 700; }
+.status-code-box .count { font-size: 12px; color: #64748b; }
+.sc-2xx { color: #34d399; }
+.sc-3xx { color: #38bdf8; }
+.sc-4xx { color: #fbbf24; }
+.sc-5xx { color: #f87171; }
+.full-width { grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+<header>
+<h1>Mergington API Dashboard <span>/ Real-time Monitoring</span> <span id="refresh-indicator"></span></h1>
+<div>
+<label style="font-size:13px;color:#64748b;">Auto-refresh:</label>
+<select id="refresh-interval" style="background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:4px;padding:4px 8px;margin-left:6px;">
+<option value="2000">2s</option>
+<option value="5000" selected>5s</option>
+<option value="10000">10s</option>
+<option value="0">Off</option>
+</select>
+</div>
+</header>
+
+<div class="container">
+
+<div class="grid-row">
+<div class="card">
+<h2>System Health</h2>
+<div id="health-content"><p style="color:#64748b;">Loading...</p></div>
+</div>
+<div class="card">
+<h2>Request Statistics</h2>
+<div class="stat-grid">
+<div><div class="stat-value" id="total-requests">-</div><div class="stat-label">Total Requests</div></div>
+<div><div class="stat-value" id="window-requests">-</div><div class="stat-label">In Window</div></div>
+<div><div class="stat-value" id="error-rate">-</div><div class="stat-label">Error Rate (%)</div></div>
+<div><div class="stat-value" id="uptime">-</div><div class="stat-label">Uptime</div></div>
+</div>
+</div>
+<div class="card">
+<h2>Latency (ms)</h2>
+<div class="stat-grid">
+<div><div class="stat-value" id="latency-avg" style="font-size:28px;">-</div><div class="stat-label">Average</div></div>
+<div><div class="stat-value" id="latency-max" style="font-size:28px;color:#f87171;">-</div><div class="stat-label">Max</div></div>
+</div>
+<div class="latency-grid">
+<div class="latency-box"><div class="val" id="latency-p50">-</div><div class="lbl">p50</div></div>
+<div class="latency-box"><div class="val" id="latency-p95">-</div><div class="lbl">p95</div></div>
+<div class="latency-box"><div class="val" id="latency-p99">-</div><div class="lbl">p99</div></div>
+</div>
+</div>
+</div>
+
+<div class="grid-row">
+<div class="card">
+<h2>Activities Overview</h2>
+<div id="stats-content"><p style="color:#64748b;">Loading...</p></div>
+</div>
+<div class="card">
+<h2>Cache Status</h2>
+<div id="cache-content"><p style="color:#64748b;">Loading...</p></div>
+<div class="btn-row">
+<button class="btn btn-warning" onclick="clearCache()">Clear All Cache</button>
+<button class="btn btn-danger" onclick="resetMetrics()">Reset Metrics</button>
+</div>
+</div>
+<div class="card">
+<h2>HTTP Status Codes</h2>
+<div class="status-code-grid" id="status-codes"><p style="color:#64748b;">No data</p></div>
+</div>
+</div>
+
+<div class="grid-row">
+<div class="card full-width">
+<h2>Top Endpoints</h2>
+<div id="top-endpoints"><p style="color:#64748b;">No data</p></div>
+</div>
+</div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '/api/v1/dashboard';
+const METRICS_API = '/api/dashboard/metrics-advanced';
+let refreshTimer = null;
+
+function showToast(msg, type) {
+const t = document.getElementById('toast');
+t.textContent = msg;
+t.className = type;
+t.classList.add('show');
+setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function setIndicator(state) {
+const ind = document.getElementById('refresh-indicator');
+ind.className = state;
+}
+
+async function fetchJSON(url) {
+const res = await fetch(url);
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
+return res.json();
+}
+
+function formatUptime(seconds) {
+if (seconds < 60) return `${seconds.toFixed(0)}s`;
+if (seconds < 3600) return `${(seconds/60).toFixed(1)}m`;
+return `${(seconds/3600).toFixed(1)}h`;
+}
+
+async function loadHealth() {
+try {
+const data = await fetchJSON(`${API}/health`);
+const dbClass = data.database === 'healthy' ? 'health-healthy' : 'health-unhealthy';
+const redisClass = data.redis === 'healthy' ? 'health-healthy' : 'health-unhealthy';
+const overallClass = data.status === 'healthy' ? 'health-healthy' : 'health-degraded';
+document.getElementById('health-content').innerHTML = `
+<div style="margin-bottom:12px;"><span class="health-badge ${overallClass}">${data.status.toUpperCase()}</span></div>
+<table>
+<tr><th>Component</th><th>Status</th></tr>
+<tr><td>Database</td><td><span class="health-badge ${dbClass}">${data.database}</span></td></tr>
+<tr><td>Redis</td><td><span class="health-badge ${redisClass}">${data.redis}</span></td></tr>
+<tr><td>Version</td><td>${data.version}</td></tr>
+<tr><td>Timestamp</td><td style="font-size:12px;">${data.timestamp}</td></tr>
+</table>`;
+} catch(e) {
+document.getElementById('health-content').innerHTML = '<p style="color:#f87171;">Failed to load</p>';
+setIndicator('error');
+}
+}
+
+async function loadStats() {
+try {
+const data = await fetchJSON(`${API}/stats`);
+const a = data.activities;
+const pct = a.total > 0 ? (a.total_participants / (a.total * 1)) * 100 : 0;
+document.getElementById('stats-content').innerHTML = `
+<div class="stat-grid">
+<div><div class="stat-value">${a.total}</div><div class="stat-label">Activities</div></div>
+<div><div class="stat-value">${a.total_participants}</div><div class="stat-label">Participants</div></div>
+<div><div class="stat-value">${a.avg_participants}</div><div class="stat-label">Avg/Activity</div></div>
+<div><div class="stat-value">${data.teachers.total}</div><div class="stat-label">Teachers</div></div>
+</div>
+<div style="margin-top:14px;">
+<div style="font-size:13px;color:#64748b;margin-bottom:4px;">Cache Entries: ${data.cache.entries}</div>
+</div>`;
+} catch(e) {
+document.getElementById('stats-content').innerHTML = '<p style="color:#f87171;">Failed to load</p>';
+}
+}
+
+async function loadCacheStatus() {
+try {
+const data = await fetchJSON(`${API}/cache-status`);
+const im = data.in_memory;
+const rc = data.redis;
+let redisHtml = '';
+if (rc.connected) {
+redisHtml = `<tr><td>Redis Connected</td><td><span class="health-badge health-healthy">Yes</span></td></tr>
+<tr><td>Redis Entries</td><td>${rc.entries}</td></tr>`;
+if (rc.used_memory) redisHtml += `<tr><td>Redis Memory</td><td>${rc.used_memory}</td></tr>`;
+if (rc.uptime_seconds) redisHtml += `<tr><td>Redis Uptime</td><td>${formatUptime(rc.uptime_seconds)}</td></tr>`;
+} else {
+redisHtml = `<tr><td>Redis</td><td><span class="health-badge health-unhealthy">Disconnected</span></td></tr>`;
+}
+document.getElementById('cache-content').innerHTML = `
+<table>
+<tr><th>Cache</th><th>Value</th></tr>
+<tr><td>In-Memory Entries</td><td>${im.entries}</td></tr>
+<tr><td>In-Memory Keys</td><td style="font-size:12px;">${im.keys.join(', ') || 'none'}</td></tr>
+${redisHtml}
+</table>`;
+} catch(e) {
+document.getElementById('cache-content').innerHTML = '<p style="color:#f87171;">Failed to load</p>';
+}
+}
+
+async function loadAdvancedMetrics() {
+try {
+const data = await fetchJSON(METRICS_API);
+document.getElementById('total-requests').textContent = data.total_requests;
+document.getElementById('window-requests').textContent = data.requests_in_window;
+document.getElementById('error-rate').textContent = data.error_rate + '%';
+document.getElementById('uptime').textContent = formatUptime(data.uptime_seconds);
+const lat = data.latency;
+document.getElementById('latency-avg').textContent = lat.avg_ms;
+document.getElementById('latency-max').textContent = lat.max_ms;
+document.getElementById('latency-p50').textContent = lat.p50_ms;
+document.getElementById('latency-p95').textContent = lat.p95_ms;
+document.getElementById('latency-p99').textContent = lat.p99_ms;
+
+const scContainer = document.getElementById('status-codes');
+const codes = data.status_codes || {};
+let scHtml = '';
+for (const [code, count] of Object.entries(codes)) {
+const cls = code < 300 ? 'sc-2xx' : code < 400 ? 'sc-3xx' : code < 500 ? 'sc-4xx' : 'sc-5xx';
+scHtml += `<div class="status-code-box"><div class="code ${cls}">${code}</div><div class="count">${count}</div></div>`;
+}
+scContainer.innerHTML = scHtml || '<p style="color:#64748b;">No data</p>';
+
+const epContainer = document.getElementById('top-endpoints');
+const endpoints = data.top_endpoints || {};
+let epHtml = '';
+for (const [ep, count] of Object.entries(endpoints)) {
+epHtml += `<div class="endpoint-row"><span class="endpoint-name">${ep}</span><span class="endpoint-count">${count}</span></div>`;
+}
+epContainer.innerHTML = epHtml || '<p style="color:#64748b;">No data</p>';
+setIndicator('');
+} catch(e) {
+setIndicator('error');
+}
+}
+
+async function refresh() {
+setIndicator('loading');
+await Promise.allSettled([loadHealth(), loadStats(), loadCacheStatus(), loadAdvancedMetrics()]);
+}
+
+async function clearCache() {
+try {
+await fetch(`${API}/cache/clear`, { method: 'POST' });
+showToast('Cache cleared successfully', 'success');
+loadCacheStatus();
+} catch(e) {
+showToast('Failed to clear cache', 'error');
+}
+}
+
+async function resetMetrics() {
+try {
+await fetch(`${API}/metrics/reset`, { method: 'POST' });
+showToast('Metrics reset successfully', 'success');
+loadAdvancedMetrics();
+} catch(e) {
+showToast('Failed to reset metrics', 'error');
+}
+}
+
+function setupRefresh() {
+if (refreshTimer) clearInterval(refreshTimer);
+const interval = parseInt(document.getElementById('refresh-interval').value);
+if (interval > 0) {
+refreshTimer = setInterval(refresh, interval);
+}
+}
+
+document.getElementById('refresh-interval').addEventListener('change', setupRefresh);
+setupRefresh();
+refresh();
+</script>
+</body>
+</html>

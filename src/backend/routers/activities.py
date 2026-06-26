@@ -2,14 +2,19 @@
 Endpoints for the High School Management System API
 """
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Depends
 from fastapi.responses import RedirectResponse
 from typing import Dict, Any, Optional, List
+from pydantic import EmailStr
 import re
 
 from ..database import activities_collection, teachers_collection
 from ..security import limiter, get_rate_limit_string
 from ..pagination import PaginationHelper
+from ..cache_invalidation import invalidate_activities_cache
+from ..auth import get_current_user
+from ..audit import log_action
+from ..models import UserInfo, SignupRequest, UnregisterRequest, MessageResponse
 
 router = APIRouter(
     prefix="/activities",
@@ -102,53 +107,39 @@ def get_available_days() -> List[str]:
     
     return days
 
-@router.post("/{activity_name}/signup")
+@router.post("/{activity_name}/signup", response_model=MessageResponse)
 @limiter.limit(get_rate_limit_string())
 def signup_for_activity(
     request: Request,
     activity_name: str,
-    email: str,
-    teacher_username: Optional[str] = Query(None)
-) -> Dict[str, str]:
+    body: SignupRequest,
+    current_user: UserInfo = Depends(get_current_user),
+) -> MessageResponse:
     """
     Sign up a student for an activity.
 
-    Requires teacher authentication. Rate limited to prevent abuse.
+    Requires JWT authentication. Rate limited to prevent abuse.
 
     Args:
         request: The incoming request object (required for rate limiting)
         activity_name: Name of the activity to sign up for
-        email: Student email address
-        teacher_username: Username of the teacher authorizing the signup
+        body: SignupRequest with student email
+        current_user: Authenticated teacher from JWT
 
     Returns:
-        dict: Confirmation message
+        MessageResponse: Confirmation message
 
     Raises:
-        HTTPException: 400 for invalid input, 401 for auth failure, 404 if activity not found
+        HTTPException: 400 for invalid input, 404 if activity not found
     """
-    # Validate input lengths
+    email = str(body.email)
+
     if not validate_input_length(activity_name):
         raise HTTPException(status_code=400, detail="Activity name is too long")
 
-    if not validate_input_length(email, MAX_EMAIL_LENGTH):
-        raise HTTPException(status_code=400, detail="Email is too long")
-
-    if teacher_username and not validate_input_length(teacher_username):
-        raise HTTPException(status_code=400, detail="Teacher username is too long")
-
-    # Validate email format
     if not validate_email(email):
         raise HTTPException(status_code=400, detail="Invalid email format")
 
-    # Check teacher authentication
-    if not teacher_username:
-        raise HTTPException(status_code=401, detail="Authentication required for this action")
-
-    teacher = teachers_collection.find_one({"_id": teacher_username})
-    if not teacher:
-        raise HTTPException(status_code=401, detail="Invalid teacher credentials")
-    
     # Get the activity
     activity = activities_collection.find_one({"_id": activity_name})
     if not activity:
@@ -157,7 +148,8 @@ def signup_for_activity(
     # Validate student is not already signed up
     if email in activity["participants"]:
         raise HTTPException(
-            status_code=400, detail="Already signed up for this activity")
+            status_code=400, detail="Already signed up for this activity"
+        )
 
     # Add student to participants
     result = activities_collection.update_one(
@@ -167,56 +159,44 @@ def signup_for_activity(
 
     if result.modified_count == 0:
         raise HTTPException(status_code=500, detail="Failed to update activity")
-    
-    return {"message": f"Signed up {email} for {activity_name}"}
 
-@router.post("/{activity_name}/unregister")
+    invalidate_activities_cache()
+    log_action("signup", current_user.username, {"activity": activity_name, "email": email})
+    return MessageResponse(message=f"Signed up {email} for {activity_name}")
+
+@router.post("/{activity_name}/unregister", response_model=MessageResponse)
 @limiter.limit(get_rate_limit_string())
 def unregister_from_activity(
     request: Request,
     activity_name: str,
-    email: str,
-    teacher_username: Optional[str] = Query(None)
-) -> Dict[str, str]:
+    body: UnregisterRequest,
+    current_user: UserInfo = Depends(get_current_user),
+) -> MessageResponse:
     """
     Remove a student from an activity.
 
-    Requires teacher authentication. Rate limited to prevent abuse.
+    Requires JWT authentication. Rate limited to prevent abuse.
 
     Args:
         request: The incoming request object (required for rate limiting)
         activity_name: Name of the activity to unregister from
-        email: Student email address
-        teacher_username: Username of the teacher authorizing the unregistration
+        body: UnregisterRequest with student email
+        current_user: Authenticated teacher from JWT
 
     Returns:
-        dict: Confirmation message
+        MessageResponse: Confirmation message
 
     Raises:
-        HTTPException: 400 for invalid input, 401 for auth failure, 404 if activity not found
+        HTTPException: 400 for invalid input, 404 if activity not found
     """
-    # Validate input lengths
+    email = str(body.email)
+
     if not validate_input_length(activity_name):
         raise HTTPException(status_code=400, detail="Activity name is too long")
 
-    if not validate_input_length(email, MAX_EMAIL_LENGTH):
-        raise HTTPException(status_code=400, detail="Email is too long")
-
-    if teacher_username and not validate_input_length(teacher_username):
-        raise HTTPException(status_code=400, detail="Teacher username is too long")
-
-    # Validate email format
     if not validate_email(email):
         raise HTTPException(status_code=400, detail="Invalid email format")
 
-    # Check teacher authentication
-    if not teacher_username:
-        raise HTTPException(status_code=401, detail="Authentication required for this action")
-
-    teacher = teachers_collection.find_one({"_id": teacher_username})
-    if not teacher:
-        raise HTTPException(status_code=401, detail="Invalid teacher credentials")
-    
     # Get the activity
     activity = activities_collection.find_one({"_id": activity_name})
     if not activity:
@@ -225,7 +205,8 @@ def unregister_from_activity(
     # Validate student is signed up
     if email not in activity["participants"]:
         raise HTTPException(
-            status_code=400, detail="Not registered for this activity")
+            status_code=400, detail="Not registered for this activity"
+        )
 
     # Remove student from participants
     result = activities_collection.update_one(
@@ -235,5 +216,7 @@ def unregister_from_activity(
 
     if result.modified_count == 0:
         raise HTTPException(status_code=500, detail="Failed to update activity")
-    
-    return {"message": f"Unregistered {email} from {activity_name}"}
+
+    invalidate_activities_cache()
+    log_action("unregister", current_user.username, {"activity": activity_name, "email": email})
+    return MessageResponse(message=f"Unregistered {email} from {activity_name}")

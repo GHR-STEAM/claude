@@ -15,11 +15,14 @@ import logging
 
 from ..performance import get_db_pool, PerformanceCache
 from ..caching_redis import RedisCache
+from ..metrics import metrics_collector
+from ..query_optimization import get_index_status
+from ..backup import list_backups, verify_backup
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/api/dashboard",
+    prefix="/dashboard",
     tags=["dashboard"]
 )
 
@@ -225,3 +228,82 @@ def clear_cache() -> Dict[str, str]:
     except Exception as e:
         logger.error(f"Failed to clear cache: {e}")
         raise HTTPException(status_code=500, detail="Failed to clear cache")
+
+
+@router.get("/metrics-advanced", response_model=Dict[str, Any])
+def get_advanced_metrics() -> Dict[str, Any]:
+    """
+    Get advanced request metrics including latency percentiles and status codes.
+
+    Returns:
+        dict: Advanced metrics snapshot with p50/p95/p99 latency, request counts, and top endpoints
+    """
+    return metrics_collector.get_snapshot()
+
+
+@router.post("/metrics/reset", response_model=Dict[str, str])
+def reset_metrics() -> Dict[str, str]:
+    """
+    Reset all collected metrics.
+
+    Returns:
+        dict: Confirmation message
+    """
+    metrics_collector.reset()
+    return {"message": "Metrics reset successfully"}
+
+
+@router.get("/indexes", response_model=Dict[str, Any])
+def get_indexes() -> Dict[str, Any]:
+    """
+    Get database index status for all collections.
+
+    Returns:
+        dict: Index information per collection
+    """
+    try:
+        pool = get_db_pool()
+        db = pool.get_database()
+        return get_index_status(db)
+    except Exception as e:
+        logger.error(f"Failed to get index status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve index status")
+
+
+@router.get("/backups", response_model=Dict[str, Any])
+def get_backups() -> Dict[str, Any]:
+    """
+    List available database backups.
+
+    Returns:
+        dict: List of backup files with metadata
+    """
+    try:
+        backups = list_backups()
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "backups": backups,
+            "total": len(backups),
+        }
+    except Exception as e:
+        logger.error(f"Failed to list backups: {e}")
+        raise HTTPException(status_code=500, detail="Failed to list backups")
+
+
+@router.get("/backups/verify", response_model=Dict[str, Any])
+def verify_backup_endpoint(filename: str) -> Dict[str, Any]:
+    """
+    Verify a backup file's integrity.
+
+    Args:
+        filename: Backup filename to verify
+
+    Returns:
+        dict: Verification result
+    """
+    from ..backup import verify_backup as vb
+    backup_path = f"backups/{filename}"
+    result = vb(backup_path)
+    if not result["valid"]:
+        raise HTTPException(status_code=400, detail=result.get("error", "Invalid backup"))
+    return result
