@@ -2,12 +2,14 @@
 Authentication endpoints for the High School Management System API
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from typing import Dict, Any
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, InvalidHashError
+import os
 
 from ..database import teachers_collection
+from ..security import limiter, get_rate_limit_string
 
 router = APIRouter(
     prefix="/auth",
@@ -17,8 +19,22 @@ router = APIRouter(
 ph = PasswordHasher()
 
 @router.post("/login")
-def login(username: str, password: str) -> Dict[str, Any]:
-    """Login a teacher account"""
+@limiter.limit(get_rate_limit_string())
+def login(request: Request, username: str, password: str) -> Dict[str, Any]:
+    """
+    Login a teacher account.
+
+    Args:
+        request: The incoming request object (required for rate limiting)
+        username: Teacher username
+        password: Teacher password
+
+    Returns:
+        dict: Teacher information including username, display_name, and role
+
+    Raises:
+        HTTPException: 401 if credentials are invalid
+    """
     # Find the teacher in the database
     teacher = teachers_collection.find_one({"_id": username})
 
