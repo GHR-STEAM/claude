@@ -102,6 +102,9 @@ def create_app() -> FastAPI:
     app.include_router(routers.activities.router)
     app.include_router(routers.auth.router)
     app.include_router(routers.dashboard.router)
+    app.include_router(routers.analytics.router)
+    app.include_router(routers.backup.router)
+    app.include_router(routers.advanced_cache.router)
 
     return app
 
