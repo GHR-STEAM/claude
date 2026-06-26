@@ -37,7 +37,7 @@ class TestAuthenticationEndpoints:
         # Note: This will fail if no database is configured
         # In production, use proper mocking
         response = client.post(
-            "/auth/login",
+            "/api/v1/auth/login",
             params={"username": "test", "password": "test123"}
         )
         # Endpoint should exist (may return 401 due to invalid credentials)
@@ -46,7 +46,7 @@ class TestAuthenticationEndpoints:
     def test_check_session_endpoint_exists(self, client):
         """Test that session check endpoint exists."""
         response = client.get(
-            "/auth/check-session",
+            "/api/v1/auth/check-session",
             params={"username": "test"}
         )
         # Endpoint should exist
@@ -56,7 +56,7 @@ class TestAuthenticationEndpoints:
         """Test handling of invalid credential formats."""
         # Test with empty credentials
         response = client.post(
-            "/auth/login",
+            "/api/v1/auth/login",
             params={"username": "", "password": ""}
         )
         # Should handle gracefully
@@ -68,7 +68,7 @@ class TestActivityEndpoints:
 
     def test_get_activities_endpoint_exists(self, client):
         """Test that activities endpoint exists."""
-        response = client.get("/activities")
+        response = client.get("/api/v1/activities")
         # Endpoint should exist and return valid response
         assert response.status_code in [200, 404, 500]
 
@@ -79,26 +79,26 @@ class TestActivityEndpoints:
             "start_time": "14:00",
             "end_time": "17:00"
         }
-        response = client.get("/activities", params=params)
+        response = client.get("/api/v1/activities", params=params)
         # Should accept filter parameters
         assert response.status_code >= 200
 
     def test_get_available_days_endpoint(self, client):
         """Test getting available days endpoint."""
-        response = client.get("/activities/days")
+        response = client.get("/api/v1/activities/days")
         # Should return list of days
         assert response.status_code in [200, 404, 500]
 
     def test_get_activities_with_pagination(self, client):
         """Test activities endpoint with pagination parameters."""
         params = {"skip": 0, "limit": 5}
-        response = client.get("/activities", params=params)
+        response = client.get("/api/v1/activities", params=params)
         assert response.status_code in [200, 404, 500]
 
     def test_get_activities_pagination_response_format(self, client):
         """Test that paginated response includes data and metadata."""
         params = {"skip": 0, "limit": 5}
-        response = client.get("/activities", params=params)
+        response = client.get("/api/v1/activities", params=params)
         if response.status_code == 200:
             data = response.json()
             assert "data" in data
@@ -136,7 +136,7 @@ class TestInputValidation:
 
         for email in invalid_emails:
             response = client.post(
-                "/activities/TestActivity/signup",
+                "/api/v1/activities/TestActivity/signup",
                 params={
                     "email": email,
                     "teacher_username": "teacher1"
@@ -151,7 +151,7 @@ class TestInputValidation:
         long_name = "A" * 1000
 
         response = client.post(
-            f"/activities/{long_name}/signup",
+            f"/api/v1/activities/{long_name}/signup",
             params={
                 "email": "test@example.com",
                 "teacher_username": "teacher1"
@@ -166,7 +166,7 @@ class TestInputValidation:
         long_email = "a" * 300 + "@example.com"
 
         response = client.post(
-            "/activities/TestActivity/signup",
+            "/api/v1/activities/TestActivity/signup",
             params={
                 "email": long_email,
                 "teacher_username": "teacher1"
@@ -181,7 +181,7 @@ class TestSecurityHeaders:
 
     def test_cors_headers_present(self, client):
         """Test that CORS headers are present in responses."""
-        response = client.get("/activities")
+        response = client.get("/api/v1/activities")
         # CORS middleware should add necessary headers or they should be present
         # This depends on deployment configuration
         assert response.status_code >= 200
@@ -199,7 +199,7 @@ class TestErrorHandling:
     def test_404_for_nonexistent_activity(self, client):
         """Test 404 error for nonexistent activity."""
         response = client.post(
-            "/activities/NonexistentActivity/signup",
+            "/api/v1/activities/NonexistentActivity/signup",
             params={
                 "email": "test@example.com",
                 "teacher_username": "teacher1"
@@ -211,7 +211,7 @@ class TestErrorHandling:
     def test_missing_authentication(self, client):
         """Test error when authentication is missing."""
         response = client.post(
-            "/activities/TestActivity/signup",
+            "/api/v1/activities/TestActivity/signup",
             params={
                 "email": "test@example.com"
                 # teacher_username is missing
@@ -223,7 +223,7 @@ class TestErrorHandling:
     def test_api_error_response_format(self, client):
         """Test that API errors return proper JSON format."""
         response = client.post(
-            "/activities/Test/signup",
+            "/api/v1/activities/Test/signup",
             params={
                 "email": "invalid_email",
                 "teacher_username": "test"
@@ -243,7 +243,7 @@ class TestRateLimiting:
         responses = []
         for _ in range(3):
             response = client.post(
-                "/auth/login",
+                "/api/v1/auth/login",
                 params={"username": "test", "password": "test"}
             )
             responses.append(response.status_code)
