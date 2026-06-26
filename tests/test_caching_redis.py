@@ -121,7 +121,7 @@ class TestRedisCacheOperations:
         mock_client = MagicMock()
         mock_redis.return_value = mock_client
         mock_client.ping.return_value = True
-        mock_client.keys.return_value = ["key1", "key2", "key3"]
+        mock_client.scan_iter.return_value = iter(["key1", "key2", "key3"])
         mock_client.delete.return_value = 3
 
         RedisCache._instance = None
@@ -352,7 +352,7 @@ class TestRedisCacheEdgeCases:
         mock_client = MagicMock()
         mock_redis.return_value = mock_client
         mock_client.ping.return_value = True
-        mock_client.keys.return_value = []
+        mock_client.scan_iter.return_value = iter([])
 
         RedisCache._instance = None
         RedisCache._client = None

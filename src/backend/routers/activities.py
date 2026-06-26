@@ -10,6 +10,7 @@ import re
 from ..database import activities_collection, teachers_collection
 from ..security import limiter, get_rate_limit_string
 from ..pagination import PaginationHelper
+from ..cache_invalidation import invalidate_activities_cache
 
 router = APIRouter(
     prefix="/activities",
@@ -167,7 +168,8 @@ def signup_for_activity(
 
     if result.modified_count == 0:
         raise HTTPException(status_code=500, detail="Failed to update activity")
-    
+
+    invalidate_activities_cache()
     return {"message": f"Signed up {email} for {activity_name}"}
 
 @router.post("/{activity_name}/unregister")
@@ -235,5 +237,6 @@ def unregister_from_activity(
 
     if result.modified_count == 0:
         raise HTTPException(status_code=500, detail="Failed to update activity")
-    
+
+    invalidate_activities_cache()
     return {"message": f"Unregistered {email} from {activity_name}"}

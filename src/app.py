@@ -37,6 +37,8 @@ from .backend import routers, database
 from .backend.security import limiter, handle_rate_limit_exceeded
 from .backend.logging_config import setup_logging, RequestLogger
 from .backend.performance import init_performance
+from .backend.metrics import MetricsMiddleware, metrics_collector
+from .backend.query_optimization import init_indexes
 
 # Load environment variables before reading them
 load_dotenv()
@@ -85,8 +87,18 @@ def create_app() -> FastAPI:
     # Initialize performance optimizations
     init_performance()
 
+    # Initialize database indexes
+    try:
+        init_indexes(database.db)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Index initialization failed: {e}")
+
     # Add request logging middleware
     app.add_middleware(RequestLogger)
+
+    # Add metrics collection middleware
+    app.add_middleware(MetricsMiddleware, collector=metrics_collector)
 
     # Mount the static files directory for serving the frontend
     current_dir = Path(__file__).parent
@@ -97,6 +109,12 @@ def create_app() -> FastAPI:
     def root():
         """Redirect root path to the frontend application."""
         return RedirectResponse(url="/static/index.html")
+
+    # Dashboard monitoring page
+    @app.get("/dashboard")
+    def dashboard_page():
+        """Serve the monitoring dashboard page."""
+        return RedirectResponse(url="/static/dashboard.html")
 
     # Include routers
     app.include_router(routers.activities.router)
