@@ -5,8 +5,6 @@ This module contains initial activity and teacher data, separated from
 the database connection logic for cleaner separation of concerns.
 """
 
-from .auth import hash_password
-from .security import validate_password_strength
 import os
 import logging
 
@@ -41,6 +39,7 @@ def _get_teacher_password(env_var: str, default: str) -> str:
         )
         password = default
 
+    from .security import validate_password_strength
     if not validate_password_strength(password):
         raise ValueError(
             f"Password from {env_var} does not meet minimum strength requirements "
@@ -192,6 +191,7 @@ def get_initial_teachers():
     Returns:
         list: Teacher documents ready for insertion
     """
+    from .auth import hash_password
     return [
         {
             "username": "mrodriguez",

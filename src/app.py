@@ -126,7 +126,7 @@ def create_app() -> FastAPI:
         """Serve the monitoring dashboard page."""
         return RedirectResponse(url="/static/dashboard.html")
 
-    # Include routers under /api/v1 prefix
+    # Include routers under /api/v1 prefix (Phase 5 with Phase 3 components)
     app.include_router(routers.activities.router, prefix=API_V1_PREFIX)
     app.include_router(routers.auth.router, prefix=API_V1_PREFIX)
     app.include_router(routers.dashboard.router, prefix=API_V1_PREFIX)

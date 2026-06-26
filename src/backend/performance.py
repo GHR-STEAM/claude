@@ -16,7 +16,6 @@ Usage:
 import functools
 import time
 from typing import Any, Callable, Optional, Dict
-import pymongo
 from pymongo import MongoClient
 import logging
 
