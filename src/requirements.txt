@@ -8,6 +8,7 @@ python-dotenv==1.0.0
 slowapi==0.1.5
 pydantic==2.4.2
 pydantic-settings==2.1.0
+redis==5.0.1
 
 # Testing dependencies
 pytest==7.4.3

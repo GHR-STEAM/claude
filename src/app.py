@@ -35,6 +35,8 @@ import os
 from pathlib import Path
 from .backend import routers, database
 from .backend.security import limiter, handle_rate_limit_exceeded
+from .backend.logging_config import setup_logging, RequestLogger
+from .backend.performance import init_performance
 
 # Load environment variables before reading them
 load_dotenv()
@@ -80,6 +82,12 @@ def create_app() -> FastAPI:
     # Initialize database with sample data if empty
     database.init_database()
 
+    # Initialize performance optimizations
+    init_performance()
+
+    # Add request logging middleware
+    app.add_middleware(RequestLogger)
+
     # Mount the static files directory for serving the frontend
     current_dir = Path(__file__).parent
     app.mount("/static", StaticFiles(directory=os.path.join(current_dir, "static")), name="static")
@@ -93,24 +101,12 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(routers.activities.router)
     app.include_router(routers.auth.router)
+    app.include_router(routers.dashboard.router)
 
     return app
 
 # Create the application instance
 app = create_app()
 
-# Initialize database with sample data if empty
-database.init_database()
-
-# Mount the static files directory for serving the frontend
-current_dir = Path(__file__).parent
-app.mount("/static", StaticFiles(directory=os.path.join(current_dir, "static")), name="static")
-
-# Root endpoint to redirect to static index.html
-@app.get("/")
-def root():
-    return RedirectResponse(url="/static/index.html")
-
-# Include routers
-app.include_router(routers.activities.router)
-app.include_router(routers.auth.router)
+# Initialize logging
+setup_logging()
