@@ -140,7 +140,7 @@ class BackupManager:
             try:
                 object_id = ObjectId(backup_id)
             except InvalidId:
-                raise ValueError("Invalid backup ID format")
+                raise ValueError("Invalid backup ID format") from None
 
             backup = self.backups_collection.find_one({"_id": object_id})
 
@@ -181,7 +181,7 @@ class BackupManager:
             try:
                 object_id = ObjectId(backup_id)
             except InvalidId:
-                raise ValueError("Invalid backup ID format")
+                raise ValueError("Invalid backup ID format") from None
 
             backup = self.backups_collection.find_one({"_id": object_id})
 

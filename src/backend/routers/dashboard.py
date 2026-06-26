@@ -312,8 +312,13 @@ def verify_backup_endpoint(backup_id: str) -> Dict[str, Any]:
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     except ValueError as e:
-        logger.error(f"Failed to verify backup: {e}")
-        raise HTTPException(status_code=404, detail=str(e))
+        error_msg = str(e)
+        if "Invalid backup ID format" in error_msg:
+            logger.error(f"Failed to verify backup: {e}")
+            raise HTTPException(status_code=400, detail=error_msg)
+        else:
+            logger.error(f"Failed to verify backup: {e}")
+            raise HTTPException(status_code=404, detail=error_msg)
     except Exception as e:
         logger.error(f"Failed to verify backup: {e}")
         raise HTTPException(status_code=500, detail="Failed to verify backup")

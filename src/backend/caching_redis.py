@@ -49,7 +49,11 @@ class RedisCache:
         return cls._instance
 
     def __init__(self):
-        if self._client is None and is_redis_enabled():
+        if not is_redis_enabled():
+            self._client = None
+            return
+
+        if self._client is None:
             import time
             now = time.time()
             if now - self.__class__._last_attempt < self.__class__._retry_cooldown:
