@@ -24,14 +24,21 @@ class TestRequestIDMiddleware:
         from src.backend.request_id import RequestIDMiddleware
 
         captured_scope = {}
+        captured_response = {}
 
         async def mock_app(scope, receive, send):
             captured_scope.update(scope)
+            await send({
+                "type": "http.response.start",
+                "status": 200,
+                "headers": []
+            })
 
         async def mock_receive():
             return {"type": "http.request"}
 
         async def mock_send(message):
+            captured_response.update(message)
             if message["type"] == "http.response.start":
                 for k, v in message.get("headers", []):
                     if k == b"x-request-id":
@@ -48,6 +55,7 @@ class TestRequestIDMiddleware:
         asyncio.run(middleware(scope, mock_receive, mock_send))
 
         assert "request_id" in captured_scope
+        assert "response_request_id" in captured_scope
         assert captured_scope["response_request_id"] == captured_scope["request_id"]
         uuid.UUID(captured_scope["request_id"])
 
@@ -59,6 +67,11 @@ class TestRequestIDMiddleware:
 
         async def mock_app(scope, receive, send):
             captured.update(scope)
+            await send({
+                "type": "http.response.start",
+                "status": 200,
+                "headers": []
+            })
 
         async def mock_receive():
             return {"type": "http.request"}

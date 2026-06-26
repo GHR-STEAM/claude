@@ -236,12 +236,15 @@ class TestBackupInfo:
 
     def test_get_backup_info_not_found(self, backup_manager, mock_db):
         """Test backup info retrieval for non-existent backup."""
+        from bson import ObjectId
+
         mock_backups_collection = MagicMock()
         mock_backups_collection.find_one.return_value = None
         backup_manager.backups_collection = mock_backups_collection
 
+        valid_id = str(ObjectId())
         with pytest.raises(ValueError, match="Backup not found"):
-            backup_manager.get_backup_info("nonexistent_id")
+            backup_manager.get_backup_info(valid_id)
 
 
 class TestBackupVerification:

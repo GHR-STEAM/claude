@@ -146,10 +146,8 @@ class TestErrorHandling:
 
     def test_handle_rate_limit_exceeded(self):
         """Test that rate limit handler raises appropriate exception."""
-        from slowapi.errors import RateLimitExceeded
-
         request = Mock(spec=Request)
-        exc = RateLimitExceeded("100 per 60 seconds")
+        exc = Mock()  # Mock the RateLimitExceeded exception
 
         with pytest.raises(Exception) as exc_info:
             handle_rate_limit_exceeded(request, exc)
@@ -159,10 +157,8 @@ class TestErrorHandling:
 
     def test_rate_limit_error_message(self):
         """Test that rate limit error has descriptive message."""
-        from slowapi.errors import RateLimitExceeded
-
         request = Mock(spec=Request)
-        exc = RateLimitExceeded("100 per 60 seconds")
+        exc = Mock()  # Mock the RateLimitExceeded exception
 
         with pytest.raises(Exception) as exc_info:
             handle_rate_limit_exceeded(request, exc)
