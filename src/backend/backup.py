@@ -225,8 +225,14 @@ class BackupManager:
         """
         try:
             from bson import ObjectId
+            from bson.errors import InvalidId
 
-            result = self.backups_collection.delete_one({"_id": ObjectId(backup_id)})
+            try:
+                object_id = ObjectId(backup_id)
+            except InvalidId:
+                raise ValueError("Invalid backup ID format") from None
+
+            result = self.backups_collection.delete_one({"_id": object_id})
 
             if result.deleted_count > 0:
                 self._log_backup_event(backup_id, "deleted", "Backup deleted")
@@ -235,6 +241,8 @@ class BackupManager:
 
             return False
 
+        except ValueError:
+            raise
         except Exception as e:
             logger.error(f"Backup deletion failed: {e}")
             raise
