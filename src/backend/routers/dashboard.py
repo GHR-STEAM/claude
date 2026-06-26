@@ -307,10 +307,13 @@ def verify_backup_endpoint(backup_id: str) -> Dict[str, Any]:
         result = manager.verify_backup_integrity(backup_id)
         return {
             "backup_id": backup_id,
-            "valid": True,
+            "valid": result.get("is_valid", False),
             "integrity_verified": result,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+    except ValueError as e:
+        logger.error(f"Failed to verify backup: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to verify backup: {e}")
-        raise HTTPException(status_code=400, detail=f"Failed to verify backup: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to verify backup")
