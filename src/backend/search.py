@@ -72,7 +72,11 @@ class SearchEngine:
             dict: Search results with metadata
         """
         filters = filters or {}
-        logger.info(f"Searching activities: query='{query}', filters={filters}")
+        logger.info(
+            "Searching activities: has_query=%s, filter_keys=%s",
+            bool(query and query.strip()),
+            sorted(filters.keys()),
+        )
 
         # Build MongoDB query
         mongo_query = self._build_activity_query(query, filters)
@@ -133,10 +137,10 @@ class SearchEngine:
         Returns:
             dict: Search results
         """
-        logger.info(f"Searching teachers: query='{query}'")
+        logger.info("Searching teachers: has_query=%s", bool(query and query.strip()))
 
-        # Build search regex
-        search_regex = {"$regex": query, "$options": "i"}
+        # Build search regex with escaped query to treat as literal string
+        search_regex = {"$regex": re.escape(query.strip()), "$options": "i"}
 
         mongo_query = {
             "$or": [
@@ -189,7 +193,7 @@ class SearchEngine:
 
         # Text search
         if query and query.strip():
-            search_regex = {"$regex": query, "$options": "i"}
+            search_regex = {"$regex": re.escape(query.strip()), "$options": "i"}
             mongo_query["$or"] = [
                 {"_id": search_regex},
                 {"description": search_regex},
