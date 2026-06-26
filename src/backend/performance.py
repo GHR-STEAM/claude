@@ -94,6 +94,7 @@ class PerformanceCache:
     """Simple in-memory cache for performance optimization."""
 
     _cache: Dict[str, tuple] = {}
+    _max_size: int = 1000
 
     @classmethod
     def set(cls, key: str, value: Any, ttl: int = 300):
@@ -105,6 +106,14 @@ class PerformanceCache:
             value: Value to cache
             ttl: Time to live in seconds (default: 300)
         """
+        now = time.time()
+        if len(cls._cache) >= cls._max_size:
+            expired_keys = [k for k, (_, exp) in cls._cache.items() if now > exp]
+            for k in expired_keys:
+                del cls._cache[k]
+            if len(cls._cache) >= cls._max_size:
+                first_key = next(iter(cls._cache))
+                del cls._cache[first_key]
         cls._cache[key] = (value, time.time() + ttl)
 
     @classmethod

@@ -24,8 +24,8 @@ LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 
 # Log file configuration
-LOG_FILE = LOG_DIR / f"app_{datetime.now().strftime('%Y%m%d')}.log"
-ERROR_LOG_FILE = LOG_DIR / f"error_{datetime.now().strftime('%Y%m%d')}.log"
+LOG_FILE = LOG_DIR / "app.log"
+ERROR_LOG_FILE = LOG_DIR / "error.log"
 
 # Log levels from environment
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

@@ -38,6 +38,8 @@ class RedisCache:
 
     _instance: Optional["RedisCache"] = None
     _client: Optional[Redis] = None
+    _last_attempt: float = 0.0
+    _retry_cooldown: float = 60.0
 
     def __new__(cls):
         if cls._instance is None:
@@ -46,6 +48,11 @@ class RedisCache:
 
     def __init__(self):
         if self._client is None and REDIS_ENABLED:
+            import time
+            now = time.time()
+            if now - self.__class__._last_attempt < self.__class__._retry_cooldown:
+                return
+            self.__class__._last_attempt = now
             try:
                 self._client = redis.Redis(
                     host=REDIS_HOST,
@@ -153,7 +160,7 @@ class RedisCache:
             return 0
 
         try:
-            keys = self._client.keys(pattern)
+            keys = list(self._client.scan_iter(match=pattern))
             if keys:
                 count = self._client.delete(*keys)
                 logger.debug(f"Cache cleared: {count} keys deleted")

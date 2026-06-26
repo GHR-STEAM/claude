@@ -79,11 +79,13 @@ def get_statistics() -> Dict[str, Any]:
         activity_count = activities_collection.count_documents({})
         teacher_count = teachers_collection.count_documents({})
 
-        # Count total participants across all activities
-        activities = list(activities_collection.find({}))
-        total_participants = sum(
-            len(activity.get("participants", [])) for activity in activities
-        )
+        # Count total participants across all activities using aggregation
+        pipeline = [
+            {"$project": {"num_participants": {"$size": {"$ifNull": ["$participants", []]}}}},
+            {"$group": {"_id": None, "total": {"$sum": "$num_participants"}}}
+        ]
+        aggregation_result = list(activities_collection.aggregate(pipeline))
+        total_participants = aggregation_result[0]["total"] if aggregation_result else 0
 
         # Calculate average participants per activity
         avg_participants = (
