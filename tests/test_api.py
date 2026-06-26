@@ -89,6 +89,38 @@ class TestActivityEndpoints:
         # Should return list of days
         assert response.status_code in [200, 404, 500]
 
+    def test_get_activities_with_pagination(self, client):
+        """Test activities endpoint with pagination parameters."""
+        params = {"skip": 0, "limit": 5}
+        response = client.get("/activities", params=params)
+        assert response.status_code in [200, 404, 500]
+
+    def test_get_activities_pagination_response_format(self, client):
+        """Test that paginated response includes data and metadata."""
+        params = {"skip": 0, "limit": 5}
+        response = client.get("/activities", params=params)
+        if response.status_code == 200:
+            data = response.json()
+            assert "data" in data
+            assert "metadata" in data
+            metadata = data["metadata"]
+            assert "current_page" in metadata
+            assert "page_size" in metadata
+            assert "total_items" in metadata
+            assert "total_pages" in metadata
+            assert "has_next" in metadata
+            assert "has_previous" in metadata
+
+    def test_get_activities_pagination_skip_validation(self, client):
+        """Test that negative skip is rejected."""
+        response = client.get("/activities", params={"skip": -1, "limit": 5})
+        assert response.status_code == 422
+
+    def test_get_activities_pagination_limit_max(self, client):
+        """Test that limit exceeding max is rejected."""
+        response = client.get("/activities", params={"skip": 0, "limit": 200})
+        assert response.status_code == 422
+
 
 class TestInputValidation:
     """Test suite for input validation in API endpoints."""

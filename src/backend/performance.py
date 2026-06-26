@@ -18,7 +18,6 @@ import time
 from typing import Any, Callable, Optional, Dict
 import pymongo
 from pymongo import MongoClient
-from pymongo.pool import DEFAULT_MAX_POOL_SIZE
 import logging
 
 logger = logging.getLogger(__name__)

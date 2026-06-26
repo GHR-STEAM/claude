@@ -9,6 +9,7 @@ import re
 
 from ..database import activities_collection, teachers_collection
 from ..security import limiter, get_rate_limit_string
+from ..pagination import PaginationHelper
 
 router = APIRouter(
     prefix="/activities",
@@ -34,33 +35,55 @@ def validate_input_length(value: str, max_length: int = MAX_STRING_LENGTH) -> bo
 def get_activities(
     day: Optional[str] = None,
     start_time: Optional[str] = None,
-    end_time: Optional[str] = None
+    end_time: Optional[str] = None,
+    skip: int = Query(0, ge=0, description="Number of activities to skip for pagination"),
+    limit: int = Query(0, ge=0, le=PaginationHelper.MAX_PAGE_SIZE, description="Max activities to return (0 = all)"),
 ) -> Dict[str, Any]:
     """
-    Get all activities with their details, with optional filtering by day and time
-    
+    Get all activities with their details, with optional filtering by day and time.
+
+    Supports cursor-based pagination via skip/limit parameters.
+    When limit=0 (default), all matching activities are returned as a dict keyed by name.
+    When limit>0, a paginated response with data and metadata is returned.
+
     - day: Filter activities occurring on this day (e.g., 'Monday', 'Tuesday')
     - start_time: Filter activities starting at or after this time (24-hour format, e.g., '14:30')
     - end_time: Filter activities ending at or before this time (24-hour format, e.g., '17:00')
+    - skip: Number of activities to skip (for pagination)
+    - limit: Maximum number of activities to return (0 = all, max 100)
     """
     # Build the query based on provided filters
     query = {}
-    
+
     if day:
         query["schedule_details.days"] = {"$in": [day]}
-    
+
     if start_time:
         query["schedule_details.start_time"] = {"$gte": start_time}
-    
+
     if end_time:
         query["schedule_details.end_time"] = {"$lte": end_time}
-    
-    # Query the database
+
+    # Paginated response when limit is specified
+    if limit > 0:
+        response = PaginationHelper.paginate_query(
+            collection=activities_collection,
+            query=query,
+            skip=skip,
+            limit=limit,
+            sort_field="_id",
+        )
+        return {
+            "data": response.data,
+            "metadata": response.metadata.dict(),
+        }
+
+    # Default: return all activities as dict keyed by name (backward compatible)
     activities = {}
     for activity in activities_collection.find(query):
         name = activity.pop('_id')
         activities[name] = activity
-    
+
     return activities
 
 @router.get("/days", response_model=List[str])

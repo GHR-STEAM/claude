@@ -10,7 +10,7 @@ This module provides:
 
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 from ..performance import get_db_pool, PerformanceCache
@@ -50,7 +50,7 @@ def health_check() -> Dict[str, Any]:
 
         return {
             "status": "healthy" if db_status == "healthy" else "degraded",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "database": db_status,
             "redis": redis_status,
             "version": "1.0.0",
@@ -93,7 +93,7 @@ def get_statistics() -> Dict[str, Any]:
         )
 
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "activities": {
                 "total": activity_count,
                 "total_participants": total_participants,
@@ -140,7 +140,7 @@ def get_metrics() -> Dict[str, Any]:
             db_metrics = {"error": "Unable to retrieve MongoDB metrics"}
 
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "cache": {
                 "type": "in-memory",
                 "entries": len(PerformanceCache._cache),
@@ -195,7 +195,7 @@ def get_cache_status() -> Dict[str, Any]:
             }
 
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "in_memory": in_memory_stats,
             "redis": redis_stats,
         }
