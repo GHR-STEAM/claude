@@ -170,6 +170,7 @@ class TestAuditLogging:
             }
         ]
         mock_cursor.__iter__ = MagicMock(return_value=iter(mock_docs))
+        mock_collection.find.return_value = mock_cursor
         mock_get_collection.return_value = mock_collection
 
         from src.backend.audit import get_audit_logs

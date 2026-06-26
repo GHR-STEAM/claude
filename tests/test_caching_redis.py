@@ -274,7 +274,7 @@ class TestRedisCacheDecorator:
     @patch('src.backend.caching_redis.redis.Redis')
     def test_cache_decorator_returns_cached_value(self, mock_redis):
         """Test decorator returns cached value on second call."""
-        from src.backend.caching_redis import redis_cache
+        from src.backend.caching_redis import redis_cache, RedisCache
 
         mock_client = MagicMock()
         mock_redis.return_value = mock_client
@@ -282,6 +282,10 @@ class TestRedisCacheDecorator:
 
         cached_value = json.dumps({"result": "cached_data"})
         mock_client.get.return_value = cached_value
+
+        RedisCache._instance = None
+        RedisCache._client = None
+        RedisCache._last_attempt = 0.0
 
         with patch.dict('os.environ', {'REDIS_ENABLED': 'true'}):
             @redis_cache(ttl=300)
