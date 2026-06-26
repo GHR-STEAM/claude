@@ -13,6 +13,7 @@ from ..security import limiter, get_rate_limit_string
 from ..pagination import PaginationHelper
 from ..cache_invalidation import invalidate_activities_cache
 from ..auth import get_current_user
+from ..audit import log_action
 from ..models import UserInfo, SignupRequest, UnregisterRequest, MessageResponse
 
 router = APIRouter(
@@ -160,6 +161,7 @@ def signup_for_activity(
         raise HTTPException(status_code=500, detail="Failed to update activity")
 
     invalidate_activities_cache()
+    log_action("signup", current_user.username, {"activity": activity_name, "email": email})
     return MessageResponse(message=f"Signed up {email} for {activity_name}")
 
 @router.post("/{activity_name}/unregister", response_model=MessageResponse)
@@ -216,4 +218,5 @@ def unregister_from_activity(
         raise HTTPException(status_code=500, detail="Failed to update activity")
 
     invalidate_activities_cache()
+    log_action("unregister", current_user.username, {"activity": activity_name, "email": email})
     return MessageResponse(message=f"Unregistered {email} from {activity_name}")

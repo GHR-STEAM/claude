@@ -11,6 +11,7 @@
       <h1>Mergington High School</h1>
       <h2>Extracurricular Activities</h2>
       <div id="user-controls">
+        <a href="/dashboard" style="margin-right: 15px; font-size: 13px; color: inherit; text-decoration: none;">📊 Dashboard</a>
         <div id="user-status">
           <button id="login-button" class="icon-button">
             <span class="user-icon">👤</span>
@@ -106,6 +107,17 @@
             <div id="activities-list">
               <!-- Activities will be loaded here -->
               <p>Loading activities...</p>
+            </div>
+            <div id="pagination-controls" class="pagination-controls" style="display:none; justify-content: center; align-items: center; gap: 12px; margin-top: 20px; padding: 10px;">
+              <button id="prev-page" class="page-btn" style="padding: 6px 16px; border: 1px solid #ccc; border-radius: 6px; background: #f8f9fa; cursor: pointer;">← Previous</button>
+              <span id="page-info" style="font-size: 14px; color: #555;"></span>
+              <button id="next-page" class="page-btn" style="padding: 6px 16px; border: 1px solid #ccc; border-radius: 6px; background: #f8f9fa; cursor: pointer;">Next →</button>
+              <select id="page-size-select" style="margin-left: 15px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <option value="0">All</option>
+                <option value="5">5 / page</option>
+                <option value="10">10 / page</option>
+                <option value="20">20 / page</option>
+              </select>
             </div>
             <div id="message" class="hidden message"></div>
           </div>

@@ -22,7 +22,7 @@ from ..backup import list_backups, verify_backup
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/api/dashboard",
+    prefix="/dashboard",
     tags=["dashboard"]
 )
 
