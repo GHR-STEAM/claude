@@ -130,6 +130,9 @@ def create_app() -> FastAPI:
     app.include_router(routers.activities.router, prefix=API_V1_PREFIX)
     app.include_router(routers.auth.router, prefix=API_V1_PREFIX)
     app.include_router(routers.dashboard.router, prefix=API_V1_PREFIX)
+    app.include_router(routers.analytics.router, prefix=API_V1_PREFIX)
+    app.include_router(routers.backup.router, prefix=API_V1_PREFIX)
+    app.include_router(routers.advanced_cache.router, prefix=API_V1_PREFIX)
 
     return app
 
