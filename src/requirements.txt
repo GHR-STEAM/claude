@@ -8,6 +8,8 @@ slowapi==0.1.5
 pydantic>=2.9.0
 pydantic-settings>=2.5.0
 redis==5.0.1
+PyJWT>=2.8.0
+email-validator>=2.0.0
 
 # Testing dependencies
 pytest>=8.0.0

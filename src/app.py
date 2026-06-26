@@ -39,6 +39,7 @@ from .backend.logging_config import setup_logging, RequestLogger
 from .backend.performance import init_performance
 from .backend.metrics import MetricsMiddleware, metrics_collector
 from .backend.query_optimization import init_indexes
+from .backend.error_handlers import register_error_handlers
 
 # Load environment variables before reading them
 load_dotenv()
@@ -66,6 +67,9 @@ def create_app() -> FastAPI:
     # Rate limiting setup
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, handle_rate_limit_exceeded)
+
+    # Register global error handlers
+    register_error_handlers(app)
 
     # Security: Add CORS middleware with restricted origins
     cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")

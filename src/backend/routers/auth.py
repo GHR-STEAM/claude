@@ -1,69 +1,86 @@
 """
-Authentication endpoints for the High School Management System API
+Authentication endpoints for the High School Management System API.
+
+Provides JWT-based login and session validation.
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Depends, status
 from typing import Dict, Any
-from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError, InvalidHashError
-import os
+import logging
 
 from ..database import teachers_collection
 from ..security import limiter, get_rate_limit_string
+from ..auth import (
+    authenticate_user,
+    create_access_token,
+    get_current_user,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+)
+from ..models import LoginRequest, TokenResponse, UserInfo, MessageResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"]
 )
 
-ph = PasswordHasher()
 
-@router.post("/login")
+@router.post("/login", response_model=TokenResponse)
 @limiter.limit(get_rate_limit_string())
-def login(request: Request, username: str, password: str) -> Dict[str, Any]:
+def login(request: Dict[str, Any], credentials: LoginRequest) -> TokenResponse:
     """
-    Login a teacher account.
+    Login a teacher account and receive a JWT access token.
 
     Args:
-        request: The incoming request object (required for rate limiting)
-        username: Teacher username
-        password: Teacher password
+        credentials: LoginRequest body with username and password
 
     Returns:
-        dict: Teacher information including username, display_name, and role
+        TokenResponse: JWT token with user info
 
     Raises:
         HTTPException: 401 if credentials are invalid
     """
-    # Find the teacher in the database
-    teacher = teachers_collection.find_one({"_id": username})
+    teacher = authenticate_user(credentials.username, credentials.password)
 
     if not teacher:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
 
-    # Verify password using Argon2
-    try:
-        ph.verify(teacher["password"], password)
-    except (VerifyMismatchError, InvalidHashError):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+    token = create_access_token(teacher["username"], teacher["role"])
 
-    # Return teacher information (excluding password)
-    return {
-        "username": teacher["username"],
-        "display_name": teacher["display_name"],
-        "role": teacher["role"]
-    }
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        username=teacher["username"],
+        display_name=teacher["display_name"],
+        role=teacher["role"],
+    )
 
-@router.get("/check-session")
-def check_session(username: str) -> Dict[str, Any]:
-    """Check if a session is valid by username"""
-    teacher = teachers_collection.find_one({"_id": username})
-    
-    if not teacher:
-        raise HTTPException(status_code=404, detail="Teacher not found")
-    
-    return {
-        "username": teacher["username"],
-        "display_name": teacher["display_name"],
-        "role": teacher["role"]
-    }
+
+@router.get("/check-session", response_model=UserInfo)
+def check_session(user: UserInfo = Depends(get_current_user)) -> UserInfo:
+    """
+    Validate the current session via JWT token.
+
+    Returns:
+        UserInfo: Authenticated user information
+
+    Raises:
+        HTTPException: 401 if token is invalid or expired
+    """
+    return user
+
+
+@router.get("/me", response_model=UserInfo)
+def get_me(user: UserInfo = Depends(get_current_user)) -> UserInfo:
+    """
+    Get the current authenticated user's info.
+
+    Returns:
+        UserInfo: Current user information
+    """
+    return user
