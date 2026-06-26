@@ -17,7 +17,7 @@ from ..performance import get_db_pool, PerformanceCache
 from ..caching_redis import RedisCache
 from ..metrics import metrics_collector
 from ..query_optimization import get_index_status
-from ..backup import list_backups, verify_backup
+from ..backup import get_backup_manager
 
 logger = logging.getLogger(__name__)
 
@@ -279,7 +279,8 @@ def get_backups() -> Dict[str, Any]:
         dict: List of backup files with metadata
     """
     try:
-        backups = list_backups()
+        manager = get_backup_manager()
+        backups = manager.list_backups(limit=50)
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "backups": backups,
@@ -291,19 +292,25 @@ def get_backups() -> Dict[str, Any]:
 
 
 @router.get("/backups/verify", response_model=Dict[str, Any])
-def verify_backup_endpoint(filename: str) -> Dict[str, Any]:
+def verify_backup_endpoint(backup_id: str) -> Dict[str, Any]:
     """
-    Verify a backup file's integrity.
+    Verify a backup's integrity.
 
     Args:
-        filename: Backup filename to verify
+        backup_id: Backup ID to verify
 
     Returns:
         dict: Verification result
     """
-    from ..backup import verify_backup as vb
-    backup_path = f"backups/{filename}"
-    result = vb(backup_path)
-    if not result["valid"]:
-        raise HTTPException(status_code=400, detail=result.get("error", "Invalid backup"))
-    return result
+    try:
+        manager = get_backup_manager()
+        result = manager.verify_backup_integrity(backup_id)
+        return {
+            "backup_id": backup_id,
+            "valid": True,
+            "integrity_verified": result,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to verify backup: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to verify backup: {str(e)}")
