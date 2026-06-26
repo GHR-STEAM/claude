@@ -12,7 +12,14 @@ from src.backend.analytics import AnalyticsEngine, ReportType
 def mock_db():
     """Mock MongoDB database."""
     db = MagicMock()
-    db.__getitem__ = MagicMock()
+    # Use side_effect to return specific mocks for each collection
+    collections = {}
+    def get_collection(name):
+        if name not in collections:
+            collections[name] = MagicMock()
+        return collections[name]
+    db.__getitem__ = Mock(side_effect=get_collection)
+    db._collections = collections
     return db
 
 
@@ -25,7 +32,6 @@ def analytics_engine(mock_db):
         mock_pool.return_value = mock_pool_instance
 
         engine = AnalyticsEngine()
-        engine.db = mock_db
         return engine
 
 
@@ -49,10 +55,9 @@ class TestActivityReport:
             },
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.count_documents.return_value = 2
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        # Configure the activities collection mock
+        mock_db._collections['activities'].count_documents.return_value = 2
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_activity_report()
 
@@ -70,10 +75,8 @@ class TestActivityReport:
             {"_id": "a3", "category": "Arts", "participants": []},
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.count_documents.return_value = 3
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].count_documents.return_value = 3
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_activity_report()
 
@@ -83,10 +86,8 @@ class TestActivityReport:
 
     def test_generate_activity_report_empty(self, analytics_engine, mock_db):
         """Test activity report with no activities."""
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.count_documents.return_value = 0
-        mock_activities_collection.find.return_value = []
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].count_documents.return_value = 0
+        mock_db._collections['activities'].find.return_value = []
 
         report = analytics_engine.generate_activity_report()
 
@@ -102,14 +103,12 @@ class TestActivityReport:
             {"_id": "unpopular", "participants": []},
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.count_documents.return_value = 3
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].count_documents.return_value = 3
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_activity_report()
 
-        assert report["most_popular_activities"][0]["name"] == "popular"
+        assert report["most_popular_activities"][0]["_id"] == "popular"
         assert report["most_popular_activities"][0]["participants"] == 30
 
 
@@ -124,9 +123,7 @@ class TestParticipationReport:
             {"_id": "a3", "participants": []},
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_participation_report()
 
@@ -142,9 +139,7 @@ class TestParticipationReport:
             {"_id": "a2", "participants": []},
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_participation_report()
 
@@ -154,9 +149,7 @@ class TestParticipationReport:
 
     def test_participation_empty(self, analytics_engine, mock_db):
         """Test participation report with no activities."""
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = []
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].find.return_value = []
 
         report = analytics_engine.generate_participation_report()
 
@@ -175,9 +168,7 @@ class TestTrendsReport:
             {"_id": "a3", "category": "Arts", "participants": []},
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_trends_report(days=30)
 
@@ -194,9 +185,7 @@ class TestTrendsReport:
             {"_id": "a4", "participants": []},               # no participation
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_trends_report(days=30)
 
@@ -212,9 +201,7 @@ class TestTrendsReport:
             for i in range(10)
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_trends_report(days=30)
 
@@ -239,18 +226,8 @@ class TestTeacherPerformance:
             {"_id": "a3", "teacher": "teacher2", "participants": list(range(5))},
         ]
 
-        mock_teachers_collection = MagicMock()
-        mock_teachers_collection.find.return_value = mock_teachers
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = mock_activities
-
-        def getitem_side_effect(key):
-            if key == "teachers":
-                return mock_teachers_collection
-            elif key == "activities":
-                return mock_activities_collection
-
-        mock_db.__getitem__.side_effect = getitem_side_effect
+        mock_db._collections['teachers'].find.return_value = mock_teachers
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_teacher_performance_report()
 
@@ -267,18 +244,8 @@ class TestTeacherPerformance:
 
         mock_activities = []
 
-        mock_teachers_collection = MagicMock()
-        mock_teachers_collection.find.return_value = mock_teachers
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = mock_activities
-
-        def getitem_side_effect(key):
-            if key == "teachers":
-                return mock_teachers_collection
-            elif key == "activities":
-                return mock_activities_collection
-
-        mock_db.__getitem__.side_effect = getitem_side_effect
+        mock_db._collections['teachers'].find.return_value = mock_teachers
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_teacher_performance_report()
 
@@ -296,9 +263,7 @@ class TestEnrollmentReport:
             {"_id": "a2", "capacity": 20, "participants": list(range(15))},
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_enrollment_report()
 
@@ -314,9 +279,7 @@ class TestEnrollmentReport:
             {"_id": "a4", "capacity": 0, "participants": []},                # no limit
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_enrollment_report()
 
@@ -331,19 +294,9 @@ class TestAnalyticsDashboard:
 
     def test_dashboard_includes_all_reports(self, analytics_engine, mock_db):
         """Test that dashboard includes all report types."""
-        mock_teachers_collection = MagicMock()
-        mock_teachers_collection.find.return_value = []
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.count_documents.return_value = 0
-        mock_activities_collection.find.return_value = []
-
-        def getitem_side_effect(key):
-            if key == "teachers":
-                return mock_teachers_collection
-            elif key == "activities":
-                return mock_activities_collection
-
-        mock_db.__getitem__.side_effect = getitem_side_effect
+        mock_db._collections['teachers'].find.return_value = []
+        mock_db._collections['activities'].count_documents.return_value = 0
+        mock_db._collections['activities'].find.return_value = []
 
         dashboard = analytics_engine.get_analytics_dashboard()
 
@@ -356,10 +309,9 @@ class TestAnalyticsDashboard:
 
     def test_dashboard_timestamp(self, analytics_engine, mock_db):
         """Test dashboard timestamp is UTC."""
-        mock_db.__getitem__.return_value = MagicMock(
-            find=MagicMock(return_value=[]),
-            count_documents=MagicMock(return_value=0)
-        )
+        mock_db._collections['teachers'].find.return_value = []
+        mock_db._collections['activities'].count_documents.return_value = 0
+        mock_db._collections['activities'].find.return_value = []
 
         dashboard = analytics_engine.get_analytics_dashboard()
 
@@ -382,10 +334,8 @@ class TestReportExport:
             },
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.count_documents.return_value = 1
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].count_documents.return_value = 1
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         csv_content = analytics_engine.export_report_csv(ReportType.ACTIVITY_SUMMARY)
 
@@ -400,10 +350,8 @@ class TestReportExport:
             {"_id": "a1", "category": "Sports", "participants": list(range(5))},
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.count_documents.return_value = 1
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].count_documents.return_value = 1
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         csv_content = analytics_engine.export_report_csv(ReportType.ACTIVITY_SUMMARY)
 
@@ -428,10 +376,8 @@ class TestAnalyticsEdgeCases:
 
     def test_division_by_zero_protection(self, analytics_engine, mock_db):
         """Test protection against division by zero."""
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.count_documents.return_value = 0
-        mock_activities_collection.find.return_value = []
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].count_documents.return_value = 0
+        mock_db._collections['activities'].find.return_value = []
 
         # Should not raise ZeroDivisionError
         report = analytics_engine.generate_activity_report()
@@ -443,10 +389,8 @@ class TestAnalyticsEdgeCases:
             {"_id": "a1"},  # Missing category and participants
         ]
 
-        mock_activities_collection = MagicMock()
-        mock_activities_collection.count_documents.return_value = 1
-        mock_activities_collection.find.return_value = mock_activities
-        mock_db.__getitem__.return_value = mock_activities_collection
+        mock_db._collections['activities'].count_documents.return_value = 1
+        mock_db._collections['activities'].find.return_value = mock_activities
 
         report = analytics_engine.generate_activity_report()
 
