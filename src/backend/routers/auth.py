@@ -6,8 +6,10 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, InvalidHashError
+import os
 
 from ..database import teachers_collection
+from ..security import limiter, get_rate_limit_string
 
 router = APIRouter(
     prefix="/auth",
@@ -17,6 +19,7 @@ router = APIRouter(
 ph = PasswordHasher()
 
 @router.post("/login")
+@limiter.limit(get_rate_limit_string())
 def login(username: str, password: str) -> Dict[str, Any]:
     """Login a teacher account"""
     # Find the teacher in the database

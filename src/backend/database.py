@@ -4,10 +4,17 @@ MongoDB database configuration and setup for Mergington High School API
 
 from pymongo import MongoClient
 from argon2 import PasswordHasher
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Connect to MongoDB
-client = MongoClient('mongodb://localhost:27017/')
-db = client['mergington_high']
+mongodb_url = os.getenv('MONGODB_URL', 'mongodb://localhost:27017/')
+database_name = os.getenv('DATABASE_NAME', 'mergington_high')
+client = MongoClient(mongodb_url)
+db = client[database_name]
 activities_collection = db['activities']
 teachers_collection = db['teachers']
 
@@ -170,19 +177,19 @@ initial_teachers = [
     {
         "username": "mrodriguez",
         "display_name": "Ms. Rodriguez",
-        "password": hash_password("art123"),
+        "password": hash_password(os.getenv("TEACHER_PASSWORD_MRODRIGUEZ", "art123")),
         "role": "teacher"
      },
     {
         "username": "mchen",
         "display_name": "Mr. Chen",
-        "password": hash_password("chess456"),
+        "password": hash_password(os.getenv("TEACHER_PASSWORD_MCHEN", "chess456")),
         "role": "teacher"
     },
     {
         "username": "principal",
         "display_name": "Principal Martinez",
-        "password": hash_password("admin789"),
+        "password": hash_password(os.getenv("TEACHER_PASSWORD_PRINCIPAL", "admin789")),
         "role": "admin"
     }
 ]
