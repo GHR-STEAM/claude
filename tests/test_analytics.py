@@ -190,7 +190,7 @@ class TestTrendsReport:
         mock_activities = [
             {"_id": "a1", "participants": list(range(25))},  # high
             {"_id": "a2", "participants": list(range(10))},  # medium
-            {"_id": "a3", "participants": list(range(3))),   # low
+            {"_id": "a3", "participants": list(range(3))},   # low
             {"_id": "a4", "participants": []},               # no participation
         ]
 
