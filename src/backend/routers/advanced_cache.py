@@ -2,10 +2,13 @@
 Advanced cache management endpoints for the High School Management System API.
 """
 
+import logging
 from fastapi import APIRouter, HTTPException, Query
 from typing import Dict, Any, List
 
 from ..advanced_cache import get_advanced_cache_manager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/cache",
@@ -30,8 +33,9 @@ def warmup_cache() -> Dict[str, Any]:
             "statistics": stats,
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cache warmup failed: {str(e)}")
+    except Exception:
+        logger.exception("Cache warmup failed")
+        raise HTTPException(status_code=500, detail="Cache warmup failed") from None
 
 
 @router.get("/statistics", response_model=Dict[str, Any])
@@ -46,8 +50,9 @@ def get_cache_statistics() -> Dict[str, Any]:
         manager = get_advanced_cache_manager()
         return manager.get_cache_statistics()
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {str(e)}")
+    except Exception:
+        logger.exception("Failed to get cache statistics")
+        raise HTTPException(status_code=500, detail="Failed to get statistics") from None
 
 
 @router.get("/hot-keys", response_model=Dict[str, Any])
@@ -72,8 +77,9 @@ def get_hot_keys(
             "hot_keys": keys,
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get hot keys: {str(e)}")
+    except Exception:
+        logger.exception("Failed to get hot keys")
+        raise HTTPException(status_code=500, detail="Failed to get hot keys") from None
 
 
 @router.get("/expired-keys", response_model=Dict[str, Any])
@@ -93,8 +99,9 @@ def get_expired_keys() -> Dict[str, Any]:
             "expired_keys": expired,
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get expired keys: {str(e)}")
+    except Exception:
+        logger.exception("Failed to get expired keys")
+        raise HTTPException(status_code=500, detail="Failed to get expired keys") from None
 
 
 @router.post("/cleanup", response_model=Dict[str, Any])
@@ -114,8 +121,9 @@ def cleanup_expired() -> Dict[str, Any]:
             "entries_removed": count,
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
+    except Exception:
+        logger.exception("Cache cleanup failed")
+        raise HTTPException(status_code=500, detail="Cleanup failed") from None
 
 
 @router.post("/invalidate", response_model=Dict[str, Any])
@@ -141,8 +149,9 @@ def invalidate_by_pattern(
             "pattern": pattern,
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Invalidation failed: {str(e)}")
+    except Exception:
+        logger.exception("Cache invalidation failed")
+        raise HTTPException(status_code=500, detail="Invalidation failed") from None
 
 
 @router.post("/clear", response_model=Dict[str, Any])
@@ -162,5 +171,6 @@ def clear_all_cache() -> Dict[str, Any]:
             "entries_cleared": count,
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Clear failed: {str(e)}")
+    except Exception:
+        logger.exception("Cache clear failed")
+        raise HTTPException(status_code=500, detail="Clear failed") from None

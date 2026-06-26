@@ -2,10 +2,13 @@
 Analytics and reporting endpoints for the High School Management System API.
 """
 
+import logging
 from fastapi import APIRouter, HTTPException, Query
 from typing import Dict, Any
 
 from ..analytics import get_analytics_engine, ReportType
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/analytics",
@@ -24,8 +27,9 @@ def get_activity_summary() -> Dict[str, Any]:
     try:
         engine = get_analytics_engine()
         return engine.generate_activity_report()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")
+    except Exception:
+        logger.exception("Activity summary report failed")
+        raise HTTPException(status_code=500, detail="Report generation failed") from None
 
 
 @router.get("/participation", response_model=Dict[str, Any])
