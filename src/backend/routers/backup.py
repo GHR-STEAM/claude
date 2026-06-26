@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 from ..backup import get_backup_manager
 
 router = APIRouter(
-    prefix="/api/backup",
+    prefix="/backup",
     tags=["backup"]
 )
 
@@ -81,7 +81,11 @@ def get_backup_info(backup_id: str) -> Dict[str, Any]:
         return manager.get_backup_info(backup_id)
 
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        error_msg = str(e)
+        if "Invalid backup ID format" in error_msg:
+            raise HTTPException(status_code=400, detail=error_msg)
+        else:
+            raise HTTPException(status_code=404, detail=error_msg)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get backup info: {str(e)}")
 
@@ -102,7 +106,11 @@ def verify_backup(backup_id: str) -> Dict[str, Any]:
         return manager.verify_backup_integrity(backup_id)
 
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        error_msg = str(e)
+        if "Invalid backup ID format" in error_msg:
+            raise HTTPException(status_code=400, detail=error_msg)
+        else:
+            raise HTTPException(status_code=404, detail=error_msg)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Verification failed: {str(e)}")
 
@@ -127,6 +135,12 @@ def delete_backup(backup_id: str) -> Dict[str, str]:
         else:
             raise HTTPException(status_code=404, detail="Backup not found")
 
+    except ValueError as e:
+        error_msg = str(e)
+        if "Invalid backup ID format" in error_msg:
+            raise HTTPException(status_code=400, detail=error_msg)
+        else:
+            raise HTTPException(status_code=404, detail=error_msg)
     except HTTPException:
         raise
     except Exception as e:

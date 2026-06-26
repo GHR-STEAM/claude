@@ -11,7 +11,7 @@ from ..advanced_cache import get_advanced_cache_manager
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/api/cache",
+    prefix="/cache",
     tags=["cache"]
 )
 

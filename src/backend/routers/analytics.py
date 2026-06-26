@@ -11,7 +11,7 @@ from ..analytics import get_analytics_engine, ReportType
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/api/analytics",
+    prefix="/analytics",
     tags=["analytics"]
 )
 
