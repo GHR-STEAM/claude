@@ -2,7 +2,7 @@
 Endpoints for the High School Management System API
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from typing import Dict, Any, Optional, List
 import re
@@ -81,14 +81,38 @@ def get_available_days() -> List[str]:
 
 @router.post("/{activity_name}/signup")
 @limiter.limit(get_rate_limit_string())
-def signup_for_activity(activity_name: str, email: str, teacher_username: Optional[str] = Query(None)):
-    """Sign up a student for an activity - requires teacher authentication"""
+def signup_for_activity(
+    request: Request,
+    activity_name: str,
+    email: str,
+    teacher_username: Optional[str] = Query(None)
+) -> Dict[str, str]:
+    """
+    Sign up a student for an activity.
+
+    Requires teacher authentication. Rate limited to prevent abuse.
+
+    Args:
+        request: The incoming request object (required for rate limiting)
+        activity_name: Name of the activity to sign up for
+        email: Student email address
+        teacher_username: Username of the teacher authorizing the signup
+
+    Returns:
+        dict: Confirmation message
+
+    Raises:
+        HTTPException: 400 for invalid input, 401 for auth failure, 404 if activity not found
+    """
     # Validate input lengths
     if not validate_input_length(activity_name):
         raise HTTPException(status_code=400, detail="Activity name is too long")
 
     if not validate_input_length(email, MAX_EMAIL_LENGTH):
         raise HTTPException(status_code=400, detail="Email is too long")
+
+    if teacher_username and not validate_input_length(teacher_username):
+        raise HTTPException(status_code=400, detail="Teacher username is too long")
 
     # Validate email format
     if not validate_email(email):
@@ -125,14 +149,38 @@ def signup_for_activity(activity_name: str, email: str, teacher_username: Option
 
 @router.post("/{activity_name}/unregister")
 @limiter.limit(get_rate_limit_string())
-def unregister_from_activity(activity_name: str, email: str, teacher_username: Optional[str] = Query(None)):
-    """Remove a student from an activity - requires teacher authentication"""
+def unregister_from_activity(
+    request: Request,
+    activity_name: str,
+    email: str,
+    teacher_username: Optional[str] = Query(None)
+) -> Dict[str, str]:
+    """
+    Remove a student from an activity.
+
+    Requires teacher authentication. Rate limited to prevent abuse.
+
+    Args:
+        request: The incoming request object (required for rate limiting)
+        activity_name: Name of the activity to unregister from
+        email: Student email address
+        teacher_username: Username of the teacher authorizing the unregistration
+
+    Returns:
+        dict: Confirmation message
+
+    Raises:
+        HTTPException: 400 for invalid input, 401 for auth failure, 404 if activity not found
+    """
     # Validate input lengths
     if not validate_input_length(activity_name):
         raise HTTPException(status_code=400, detail="Activity name is too long")
 
     if not validate_input_length(email, MAX_EMAIL_LENGTH):
         raise HTTPException(status_code=400, detail="Email is too long")
+
+    if teacher_username and not validate_input_length(teacher_username):
+        raise HTTPException(status_code=400, detail="Teacher username is too long")
 
     # Validate email format
     if not validate_email(email):
