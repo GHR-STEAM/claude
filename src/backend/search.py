@@ -213,7 +213,7 @@ class SearchEngine:
             mongo_query["schedule_details.end_time"] = {"$lte": filters["end_time"]}
 
         if filters.get("min_participants"):
-            mongo_query["participants"] = {"$size": {"$gte": filters["min_participants"]}}
+            mongo_query[f"participants.{filters['min_participants'] - 1}"] = {"$exists": True}
 
         return mongo_query
 

@@ -62,7 +62,7 @@ class BackupManager:
             backup_json = json.dumps(backup_data, default=str, sort_keys=True)
             checksum = hashlib.sha256(backup_json.encode()).hexdigest()
 
-            # Create backup record
+            # Create backup record with actual data
             backup_record = {
                 "created_at": datetime.now(timezone.utc),
                 "description": description,
@@ -71,6 +71,7 @@ class BackupManager:
                 "size_bytes": len(backup_json.encode()),
                 "checksum": checksum,
                 "status": "completed",
+                "backup_data": backup_data,
             }
 
             result = self.backups_collection.insert_one(backup_record)
