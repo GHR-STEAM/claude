@@ -300,7 +300,7 @@ class TestDashboardNewEndpoints:
     def test_metrics_advanced_endpoint(self, api_client):
         """Test advanced metrics endpoint."""
         from fastapi.testclient import TestClient
-        response = api_client.get("/api/dashboard/metrics-advanced")
+        response = api_client.get("/api/v1/dashboard/metrics-advanced")
         assert response.status_code == 200
         data = response.json()
         assert "total_requests" in data
@@ -309,18 +309,18 @@ class TestDashboardNewEndpoints:
 
     def test_metrics_reset_endpoint(self, api_client):
         """Test metrics reset endpoint."""
-        response = api_client.post("/api/dashboard/metrics/reset")
+        response = api_client.post("/api/v1/dashboard/metrics/reset")
         assert response.status_code == 200
         assert "message" in response.json()
 
     def test_indexes_endpoint(self, api_client):
         """Test index status endpoint."""
-        response = api_client.get("/api/dashboard/indexes")
+        response = api_client.get("/api/v1/dashboard/indexes")
         assert response.status_code in [200, 500]
 
     def test_backups_endpoint(self, api_client):
         """Test backups listing endpoint."""
-        response = api_client.get("/api/dashboard/backups")
+        response = api_client.get("/api/v1/dashboard/backups")
         assert response.status_code == 200
         data = response.json()
         assert "backups" in data

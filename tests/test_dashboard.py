@@ -14,7 +14,7 @@ class TestDashboardHealth:
 
     def test_health_check_success(self, api_client: TestClient):
         """Test successful health check."""
-        response = api_client.get("/api/dashboard/health")
+        response = api_client.get("/api/v1/dashboard/health")
         assert response.status_code == 200
         data = response.json()
 
@@ -26,7 +26,7 @@ class TestDashboardHealth:
 
     def test_health_check_database_status(self, api_client: TestClient):
         """Test health check includes database status."""
-        response = api_client.get("/api/dashboard/health")
+        response = api_client.get("/api/v1/dashboard/health")
         assert response.status_code == 200
         data = response.json()
 
@@ -34,7 +34,7 @@ class TestDashboardHealth:
 
     def test_health_check_redis_status(self, api_client: TestClient):
         """Test health check includes Redis status."""
-        response = api_client.get("/api/dashboard/health")
+        response = api_client.get("/api/v1/dashboard/health")
         assert response.status_code == 200
         data = response.json()
 
@@ -47,7 +47,7 @@ class TestDashboardStatistics:
 
     def test_get_statistics_success(self, api_client: TestClient):
         """Test successful statistics retrieval."""
-        response = api_client.get("/api/dashboard/stats")
+        response = api_client.get("/api/v1/dashboard/stats")
         assert response.status_code == 200
         data = response.json()
 
@@ -58,7 +58,7 @@ class TestDashboardStatistics:
 
     def test_statistics_activities_section(self, api_client: TestClient):
         """Test activities statistics include required fields."""
-        response = api_client.get("/api/dashboard/stats")
+        response = api_client.get("/api/v1/dashboard/stats")
         assert response.status_code == 200
         data = response.json()
 
@@ -71,7 +71,7 @@ class TestDashboardStatistics:
 
     def test_statistics_teachers_section(self, api_client: TestClient):
         """Test teachers statistics include required fields."""
-        response = api_client.get("/api/dashboard/stats")
+        response = api_client.get("/api/v1/dashboard/stats")
         assert response.status_code == 200
         data = response.json()
 
@@ -82,7 +82,7 @@ class TestDashboardStatistics:
 
     def test_statistics_cache_section(self, api_client: TestClient):
         """Test cache statistics include required fields."""
-        response = api_client.get("/api/dashboard/stats")
+        response = api_client.get("/api/v1/dashboard/stats")
         assert response.status_code == 200
         data = response.json()
 
@@ -97,7 +97,7 @@ class TestDashboardMetrics:
 
     def test_get_metrics_success(self, api_client: TestClient):
         """Test successful metrics retrieval."""
-        response = api_client.get("/api/dashboard/metrics")
+        response = api_client.get("/api/v1/dashboard/metrics")
         assert response.status_code == 200
         data = response.json()
 
@@ -108,7 +108,7 @@ class TestDashboardMetrics:
 
     def test_metrics_cache_section(self, api_client: TestClient):
         """Test cache metrics include required fields."""
-        response = api_client.get("/api/dashboard/metrics")
+        response = api_client.get("/api/v1/dashboard/metrics")
         assert response.status_code == 200
         data = response.json()
 
@@ -119,7 +119,7 @@ class TestDashboardMetrics:
 
     def test_metrics_redis_section(self, api_client: TestClient):
         """Test Redis metrics section is present."""
-        response = api_client.get("/api/dashboard/metrics")
+        response = api_client.get("/api/v1/dashboard/metrics")
         assert response.status_code == 200
         data = response.json()
 
@@ -128,7 +128,7 @@ class TestDashboardMetrics:
 
     def test_metrics_database_section(self, api_client: TestClient):
         """Test database metrics include required fields."""
-        response = api_client.get("/api/dashboard/metrics")
+        response = api_client.get("/api/v1/dashboard/metrics")
         assert response.status_code == 200
         data = response.json()
 
@@ -143,7 +143,7 @@ class TestCacheStatus:
 
     def test_get_cache_status_success(self, api_client: TestClient):
         """Test successful cache status retrieval."""
-        response = api_client.get("/api/dashboard/cache-status")
+        response = api_client.get("/api/v1/dashboard/cache-status")
         assert response.status_code == 200
         data = response.json()
 
@@ -153,7 +153,7 @@ class TestCacheStatus:
 
     def test_cache_status_in_memory_section(self, api_client: TestClient):
         """Test in-memory cache status section."""
-        response = api_client.get("/api/dashboard/cache-status")
+        response = api_client.get("/api/v1/dashboard/cache-status")
         assert response.status_code == 200
         data = response.json()
 
@@ -165,7 +165,7 @@ class TestCacheStatus:
 
     def test_cache_status_redis_section(self, api_client: TestClient):
         """Test Redis cache status section."""
-        response = api_client.get("/api/dashboard/cache-status")
+        response = api_client.get("/api/v1/dashboard/cache-status")
         assert response.status_code == 200
         data = response.json()
 
@@ -175,7 +175,7 @@ class TestCacheStatus:
 
     def test_cache_status_redis_disconnected(self, api_client: TestClient):
         """Test Redis cache status when disconnected."""
-        response = api_client.get("/api/dashboard/cache-status")
+        response = api_client.get("/api/v1/dashboard/cache-status")
         assert response.status_code == 200
         data = response.json()
 
@@ -191,7 +191,7 @@ class TestCacheClear:
 
     def test_clear_cache_success(self, api_client: TestClient):
         """Test successful cache clearing."""
-        response = api_client.post("/api/dashboard/cache/clear")
+        response = api_client.post("/api/v1/dashboard/cache/clear")
         assert response.status_code == 200
         data = response.json()
 
@@ -201,20 +201,20 @@ class TestCacheClear:
     def test_clear_cache_clears_in_memory(self, api_client: TestClient):
         """Test that cache clearing actually clears in-memory cache."""
         # First, verify cache endpoint works
-        api_client.get("/api/dashboard/cache-status")
+        api_client.get("/api/v1/dashboard/cache-status")
 
         # Clear cache
-        response = api_client.post("/api/dashboard/cache/clear")
+        response = api_client.post("/api/v1/dashboard/cache/clear")
         assert response.status_code == 200
 
     def test_clear_cache_idempotent(self, api_client: TestClient):
         """Test that clearing cache multiple times is safe."""
         # Clear once
-        response1 = api_client.post("/api/dashboard/cache/clear")
+        response1 = api_client.post("/api/v1/dashboard/cache/clear")
         assert response1.status_code == 200
 
         # Clear again
-        response2 = api_client.post("/api/dashboard/cache/clear")
+        response2 = api_client.post("/api/v1/dashboard/cache/clear")
         assert response2.status_code == 200
 
 
@@ -224,7 +224,7 @@ class TestDashboardDataTypes:
 
     def test_statistics_numeric_types(self, api_client: TestClient):
         """Test that statistics contain correct numeric types."""
-        response = api_client.get("/api/dashboard/stats")
+        response = api_client.get("/api/v1/dashboard/stats")
         assert response.status_code == 200
         data = response.json()
 
@@ -236,7 +236,7 @@ class TestDashboardDataTypes:
 
     def test_metrics_structure(self, api_client: TestClient):
         """Test metrics response structure."""
-        response = api_client.get("/api/dashboard/metrics")
+        response = api_client.get("/api/v1/dashboard/metrics")
         assert response.status_code == 200
         data = response.json()
 
@@ -245,7 +245,7 @@ class TestDashboardDataTypes:
 
     def test_health_check_status_values(self, api_client: TestClient):
         """Test health check status contains valid values."""
-        response = api_client.get("/api/dashboard/health")
+        response = api_client.get("/api/v1/dashboard/health")
         assert response.status_code == 200
         data = response.json()
 
@@ -262,7 +262,7 @@ class TestDashboardPerformance:
         """Test health check responds quickly."""
         import time
         start = time.time()
-        response = api_client.get("/api/dashboard/health")
+        response = api_client.get("/api/v1/dashboard/health")
         elapsed = time.time() - start
 
         assert response.status_code == 200
@@ -272,7 +272,7 @@ class TestDashboardPerformance:
         """Test cache status endpoint responds quickly."""
         import time
         start = time.time()
-        response = api_client.get("/api/dashboard/cache-status")
+        response = api_client.get("/api/v1/dashboard/cache-status")
         elapsed = time.time() - start
 
         assert response.status_code == 200
