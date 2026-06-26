@@ -39,11 +39,14 @@ class TestBackupCreation:
         """Test successful backup creation."""
         mock_activities = [{"_id": "a1", "name": "Activity 1"}]
         mock_teachers = [{"_id": "t1", "name": "Teacher 1"}]
+        mock_students = [{"_id": "s1", "name": "Student 1"}]
 
         mock_activities_collection = MagicMock()
         mock_activities_collection.find.return_value = mock_activities
         mock_teachers_collection = MagicMock()
         mock_teachers_collection.find.return_value = mock_teachers
+        mock_students_collection = MagicMock()
+        mock_students_collection.find.return_value = mock_students
         mock_backups_collection = MagicMock()
         mock_result = MagicMock()
         mock_result.inserted_id = "backup_id_123"
@@ -55,12 +58,16 @@ class TestBackupCreation:
                 return mock_activities_collection
             elif key == "teachers":
                 return mock_teachers_collection
+            elif key == "students":
+                return mock_students_collection
             elif key == "backups":
                 return mock_backups_collection
             elif key == "backup_logs":
                 return mock_backup_logs_collection
+            return MagicMock()
 
         mock_db.__getitem__.side_effect = getitem_side_effect
+        mock_db.list_collection_names.return_value = ["activities", "teachers", "students"]
         backup_manager.backups_collection = mock_backups_collection
         backup_manager.backup_logs_collection = mock_backup_logs_collection
 

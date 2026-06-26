@@ -402,12 +402,12 @@ class TestBackwardCompatibility:
     def test_auth_router_has_login_endpoint(self):
         from src.backend.routers.auth import router
         routes = [r.path for r in router.routes]
-        assert "/login" in routes
+        assert "/auth/login" in routes
 
     def test_auth_router_has_check_session(self):
         from src.backend.routers.auth import router
         routes = [r.path for r in router.routes]
-        assert "/check-session" in routes
+        assert "/auth/check-session" in routes
 
     def test_activities_router_has_signup(self):
         from src.backend.routers.activities import router
@@ -417,4 +417,4 @@ class TestBackwardCompatibility:
     def test_dashboard_router_has_health(self):
         from src.backend.routers.dashboard import router
         routes = [r.path for r in router.routes]
-        assert "/health" in routes
+        assert "/dashboard/health" in routes

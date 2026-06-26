@@ -30,7 +30,9 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
-REDIS_ENABLED = os.getenv("REDIS_ENABLED", "true").lower() == "true"
+
+def is_redis_enabled() -> bool:
+    return os.getenv("REDIS_ENABLED", "true").lower() == "true"
 
 
 class RedisCache:
@@ -47,7 +49,7 @@ class RedisCache:
         return cls._instance
 
     def __init__(self):
-        if self._client is None and REDIS_ENABLED:
+        if self._client is None and is_redis_enabled():
             import time
             now = time.time()
             if now - self.__class__._last_attempt < self.__class__._retry_cooldown:

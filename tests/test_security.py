@@ -149,7 +149,7 @@ class TestErrorHandling:
         from slowapi.errors import RateLimitExceeded
 
         request = Mock(spec=Request)
-        exc = RateLimitExceeded(group_key="test", limit="100/60seconds")
+        exc = RateLimitExceeded("100 per 60 seconds")
 
         with pytest.raises(Exception) as exc_info:
             handle_rate_limit_exceeded(request, exc)
@@ -162,7 +162,7 @@ class TestErrorHandling:
         from slowapi.errors import RateLimitExceeded
 
         request = Mock(spec=Request)
-        exc = RateLimitExceeded(group_key="test", limit="100/60seconds")
+        exc = RateLimitExceeded("100 per 60 seconds")
 
         with pytest.raises(Exception) as exc_info:
             handle_rate_limit_exceeded(request, exc)

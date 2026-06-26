@@ -135,8 +135,14 @@ class BackupManager:
         """
         try:
             from bson import ObjectId
+            from bson.errors import InvalidId
 
-            backup = self.backups_collection.find_one({"_id": ObjectId(backup_id)})
+            try:
+                object_id = ObjectId(backup_id)
+            except InvalidId:
+                raise ValueError("Invalid backup ID format")
+
+            backup = self.backups_collection.find_one({"_id": object_id})
 
             if not backup:
                 raise ValueError("Backup not found")
@@ -152,6 +158,8 @@ class BackupManager:
                 "status": backup.get("status", "unknown"),
             }
 
+        except ValueError:
+            raise
         except Exception as e:
             logger.error(f"Failed to get backup info: {e}")
             raise
@@ -168,14 +176,20 @@ class BackupManager:
         """
         try:
             from bson import ObjectId
+            from bson.errors import InvalidId
 
-            backup = self.backups_collection.find_one({"_id": ObjectId(backup_id)})
+            try:
+                object_id = ObjectId(backup_id)
+            except InvalidId:
+                raise ValueError("Invalid backup ID format")
+
+            backup = self.backups_collection.find_one({"_id": object_id})
 
             if not backup:
                 raise ValueError("Backup not found")
 
             # Verify status
-            is_valid = (
+            is_valid = bool(
                 backup.get("status") == "completed" and
                 backup.get("checksum") and
                 backup.get("total_documents", 0) > 0

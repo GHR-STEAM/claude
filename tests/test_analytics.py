@@ -98,9 +98,9 @@ class TestActivityReport:
     def test_popular_activities(self, analytics_engine, mock_db):
         """Test identification of popular activities."""
         mock_activities = [
-            {"_id": "popular", "participants": list(range(30))},
-            {"_id": "moderate", "participants": list(range(10))},
-            {"_id": "unpopular", "participants": []},
+            {"_id": "popular", "participants": list(range(30)), "category": "Sports"},
+            {"_id": "moderate", "participants": list(range(10)), "category": "Arts"},
+            {"_id": "unpopular", "participants": [], "category": "Music"},
         ]
 
         mock_db._collections['activities'].count_documents.return_value = 3
@@ -108,7 +108,7 @@ class TestActivityReport:
 
         report = analytics_engine.generate_activity_report()
 
-        assert report["most_popular_activities"][0]["_id"] == "popular"
+        assert report["most_popular_activities"][0]["name"] == "popular"
         assert report["most_popular_activities"][0]["participants"] == 30
 
 

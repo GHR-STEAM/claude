@@ -45,7 +45,7 @@ class RequestIDMiddleware:
             if message["type"] == "http.response.start":
                 headers = message.get("headers", [])
                 headers.append(
-                    (self.HEADER_NAME.encode(), request_id.encode())
+                    (self.HEADER_NAME.lower().encode(), request_id.encode())
                 )
                 message["headers"] = headers
             await send(message)
