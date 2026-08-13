@@ -21,6 +21,7 @@ import logging
 from typing import Any, Optional, Callable
 import redis
 from redis import Redis
+from redis.cluster import ClusterNode
 import os
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,11 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 REDIS_ENABLED = os.getenv("REDIS_ENABLED", "true").lower() == "true"
+# Cluster mode: "standalone" (default) or "cluster"
+REDIS_MODE = os.getenv("REDIS_MODE", "standalone").lower()
+# Comma-separated host:port list of cluster startup nodes.
+# Falls back to REDIS_HOST/REDIS_PORT when empty.
+REDIS_CLUSTER_NODES = os.getenv("REDIS_CLUSTER_NODES", "")
 
 
 class RedisCache:
@@ -54,22 +60,60 @@ class RedisCache:
                 return
             self.__class__._last_attempt = now
             try:
-                self._client = redis.Redis(
-                    host=REDIS_HOST,
-                    port=REDIS_PORT,
-                    db=REDIS_DB,
-                    password=REDIS_PASSWORD,
-                    decode_responses=True,
-                    socket_connect_timeout=5,
-                    socket_keepalive=True,
-                    health_check_interval=30,
-                )
+                if REDIS_MODE == "cluster":
+                    self._client = redis.RedisCluster(
+                        startup_nodes=self._build_cluster_nodes(),
+                        password=REDIS_PASSWORD,
+                        decode_responses=True,
+                        socket_connect_timeout=5,
+                        socket_keepalive=True,
+                        health_check_interval=30,
+                    )
+                else:
+                    self._client = redis.Redis(
+                        host=REDIS_HOST,
+                        port=REDIS_PORT,
+                        db=REDIS_DB,
+                        password=REDIS_PASSWORD,
+                        decode_responses=True,
+                        socket_connect_timeout=5,
+                        socket_keepalive=True,
+                        health_check_interval=30,
+                    )
                 # Test connection
                 self._client.ping()
-                logger.info(f"Redis connected to {REDIS_HOST}:{REDIS_PORT}")
+                mode = "cluster" if REDIS_MODE == "cluster" else "standalone"
+                logger.info(f"Redis connected ({mode} mode): {self._describe_nodes()}")
             except Exception as e:
                 logger.warning(f"Failed to connect to Redis: {e}. Caching disabled.")
                 self._client = None
+
+    @staticmethod
+    def _build_cluster_nodes() -> list:
+        """Build the list of startup nodes for a Redis Cluster client."""
+        nodes = []
+        for entry in REDIS_CLUSTER_NODES.split(","):
+            entry = entry.strip()
+            if not entry:
+                continue
+            if ":" in entry:
+                host, port = entry.rsplit(":", 1)
+                try:
+                    nodes.append(ClusterNode(host=host, port=int(port)))
+                except ValueError:
+                    logger.warning(f"Invalid cluster node entry: {entry}")
+            else:
+                nodes.append(ClusterNode(host=entry, port=REDIS_PORT))
+        if not nodes:
+            nodes.append(ClusterNode(host=REDIS_HOST, port=REDIS_PORT))
+        return nodes
+
+    @staticmethod
+    def _describe_nodes() -> str:
+        """Human-readable description of the configured Redis endpoints."""
+        if REDIS_MODE == "cluster":
+            return REDIS_CLUSTER_NODES if REDIS_CLUSTER_NODES else f"{REDIS_HOST}:{REDIS_PORT}"
+        return f"{REDIS_HOST}:{REDIS_PORT}"
 
     def get_client(self) -> Optional[Redis]:
         """Get Redis client instance."""

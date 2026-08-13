@@ -396,6 +396,10 @@ FILE_LOG_LEVEL=DEBUG
 
 # Redis
 REDIS_ENABLED=true
+# Mode: "standalone" (default, single node) or "cluster" (Redis Cluster)
+REDIS_MODE=standalone
+# Comma-separated host:port list of cluster startup nodes (used when REDIS_MODE=cluster)
+REDIS_CLUSTER_NODES=
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_DB=0
@@ -440,11 +444,49 @@ DATABASE_NAME=mergington_high
 
 Potential improvements for Phase 3:
 1. Database query optimization with EXPLAIN
-2. Redis cluster support
-3. Advanced metrics (request latency percentiles)
-4. Dashboard UI for real-time monitoring
-5. Automated cache invalidation strategy
-6. Database backup and recovery procedures
+2. Advanced metrics (request latency percentiles)
+3. Dashboard UI for real-time monitoring
+4. Automated cache invalidation strategy
+5. Database backup and recovery procedures
+
+---
+
+## Redis Cluster Support ✅
+
+### File
+- **Core**: `src/backend/caching_redis.py`
+
+### Features
+- Cluster mode detection via `REDIS_MODE=cluster` environment variable
+- Graceful fallback to single-node behavior when `REDIS_MODE` is unset
+- Startup nodes configurable via comma-separated `REDIS_CLUSTER_NODES` list
+- Falls back to `REDIS_HOST`/`REDIS_PORT` when no cluster nodes are provided
+- All existing cache operations (`set`, `get`, `delete`, `clear`, `exists`, `get_stats`) work against the cluster
+- Graceful fallback when the cluster is unavailable
+
+### Configuration
+
+```bash
+# Mode: "standalone" (default, single node) or "cluster" (Redis Cluster)
+REDIS_MODE=cluster
+# Comma-separated host:port list of cluster startup nodes
+REDIS_CLUSTER_NODES=redis-node-0:6379,redis-node-1:6379,redis-node-2:6379
+```
+
+### Usage
+
+```python
+from caching_redis import RedisCache
+
+cache = RedisCache()
+if cache.is_connected():
+    cache.set("key", {"data": "value"}, ttl=600)
+    value = cache.get("key")
+```
+
+### Requirements
+- `redis` upgraded to `redis==5.0.1` (Redis Cluster client support)
+- Tests: `tests/test_caching_redis.py::TestRedisClusterMode` (4 tests)
 
 ---
 
@@ -478,6 +520,7 @@ if not cache.is_connected():
 - ✅ Performance Optimization utilities created
 - ✅ Pagination system created and documented
 - ✅ Redis Caching system created
+- ✅ Redis Cluster mode support added
 - ✅ API Dashboard endpoints created
 - ✅ Environment configuration updated
 - ✅ Dependencies added to requirements.txt
