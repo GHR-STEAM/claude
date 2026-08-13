@@ -364,6 +364,134 @@ class TestRedisCacheEdgeCases:
 
 
 @pytest.mark.unit
+class TestRedisClusterMode:
+    """Test Redis Cluster mode support."""
+
+    @patch('src.backend.caching_redis.redis.RedisCluster')
+    def test_cluster_mode_uses_cluster_client(self, mock_cluster):
+        """Test that cluster mode instantiates a RedisCluster client."""
+        from src.backend.caching_redis import RedisCache
+
+        mock_client = MagicMock()
+        mock_cluster.return_value = mock_client
+        mock_client.ping.return_value = True
+
+        RedisCache._instance = None
+        RedisCache._client = None
+        RedisCache._last_attempt = 0.0
+
+        with patch.dict('os.environ', {
+            'REDIS_ENABLED': 'true',
+            'REDIS_MODE': 'cluster',
+            'REDIS_CLUSTER_NODES': 'redis-node-0:6379,redis-node-1:6379',
+        }):
+            import src.backend.caching_redis as cr
+            with patch.object(cr, 'REDIS_MODE', 'cluster'), \
+                 patch.object(cr, 'REDIS_CLUSTER_NODES', 'redis-node-0:6379,redis-node-1:6379'):
+                cache = RedisCache()
+                assert cache.get_client() is mock_client
+                mock_cluster.assert_called_once()
+                args, kwargs = mock_cluster.call_args
+                assert "startup_nodes" in kwargs
+                nodes = kwargs["startup_nodes"]
+                assert len(nodes) == 2
+                assert nodes[0].host == "redis-node-0"
+                assert nodes[0].port == 6379
+                assert nodes[1].host == "redis-node-1"
+                assert nodes[1].port == 6379
+
+    @patch('src.backend.caching_redis.redis.RedisCluster')
+    def test_cluster_mode_defaults_to_single_node(self, mock_cluster):
+        """Test that cluster mode falls back to REDIS_HOST/REDIS_PORT."""
+        from src.backend.caching_redis import RedisCache
+
+        mock_client = MagicMock()
+        mock_cluster.return_value = mock_client
+        mock_client.ping.return_value = True
+
+        RedisCache._instance = None
+        RedisCache._client = None
+        RedisCache._last_attempt = 0.0
+
+        with patch.dict('os.environ', {
+            'REDIS_ENABLED': 'true',
+            'REDIS_MODE': 'cluster',
+            'REDIS_CLUSTER_NODES': '',
+            'REDIS_HOST': 'redis-primary',
+            'REDIS_PORT': '7000',
+        }):
+            import src.backend.caching_redis as cr
+            with patch.object(cr, 'REDIS_MODE', 'cluster'), \
+                 patch.object(cr, 'REDIS_CLUSTER_NODES', ''), \
+                 patch.object(cr, 'REDIS_HOST', 'redis-primary'), \
+                 patch.object(cr, 'REDIS_PORT', 7000):
+                cache = RedisCache()
+                assert cache.get_client() is mock_client
+                args, kwargs = mock_cluster.call_args
+                nodes = kwargs["startup_nodes"]
+                assert len(nodes) == 1
+                assert nodes[0].host == "redis-primary"
+                assert nodes[0].port == 7000
+
+    @patch('src.backend.caching_redis.redis.RedisCluster')
+    def test_cluster_connection_failure_falls_back(self, mock_cluster):
+        """Test graceful fallback when cluster connection fails."""
+        from src.backend.caching_redis import RedisCache
+
+        mock_cluster.side_effect = Exception("Cluster connection failed")
+        RedisCache._instance = None
+        RedisCache._client = None
+        RedisCache._last_attempt = 0.0
+
+        import src.backend.caching_redis as cr
+        with patch.object(cr, 'REDIS_ENABLED', True), \
+             patch.object(cr, 'REDIS_MODE', 'cluster'):
+            cache = RedisCache()
+            assert cache.get_client() is None
+
+    @patch('src.backend.caching_redis.redis.RedisCluster')
+    def test_cluster_operations_work(self, mock_cluster):
+        """Test that cache operations work against a cluster client."""
+        from src.backend.caching_redis import RedisCache
+
+        mock_client = MagicMock()
+        mock_cluster.return_value = mock_client
+        mock_client.ping.return_value = True
+        mock_client.scan_iter.return_value = iter(["key1", "key2"])
+        mock_client.delete.return_value = 2
+        mock_client.exists.return_value = 1
+        mock_client.info.return_value = {
+            'used_memory_human': '20MB',
+            'connected_clients': 8,
+            'total_commands_processed': 2000,
+            'uptime_in_seconds': 7200,
+        }
+
+        RedisCache._instance = None
+        RedisCache._client = None
+        RedisCache._last_attempt = 0.0
+
+        import src.backend.caching_redis as cr
+        with patch.object(cr, 'REDIS_ENABLED', True), \
+             patch.object(cr, 'REDIS_MODE', 'cluster'):
+            cache = RedisCache()
+
+            assert cache.set("test_key", {"data": "value"}) is True
+            mock_client.setex.assert_called_with("test_key", 300, json.dumps({"data": "value"}))
+
+            mock_client.get.return_value = json.dumps({"data": "value"})
+            assert cache.get("test_key") == {"data": "value"}
+
+            assert cache.delete("test_key") is True
+            assert cache.exists("test_key") is True
+            assert cache.clear() == 2
+
+            stats = cache.get_stats()
+            assert stats["connected"] is True
+            assert stats["used_memory"] == "20MB"
+
+
+@pytest.mark.unit
 class TestGetRedisCacheClient:
     """Test get_redis_client function."""
 
